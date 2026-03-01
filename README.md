@@ -166,6 +166,8 @@ NeurolingsCE/
 
 **NeuroSama吧QQ群734688012**
 
+**EvilNeuro吧QQ群1072864404**
+
 ---
 
 ## Star 趋势
