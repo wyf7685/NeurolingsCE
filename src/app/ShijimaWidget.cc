@@ -125,6 +125,7 @@ void ShijimaWidget::paintEvent(QPaintEvent *event) {
     auto &image = asset.image(isMirroredRender());
     auto scaledSize = image.size() / m_drawScale;
     QPainter painter(this);
+    painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
     painter.drawImage(QRect { m_drawOrigin, scaledSize }, image);
 #ifdef __linux__
     if (Platform::useWindowMasks()) {
