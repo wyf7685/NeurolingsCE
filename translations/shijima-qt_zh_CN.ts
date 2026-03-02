@@ -65,7 +65,7 @@
     </message>
     <message>
         <source>Multiplication</source>
-        <translation>繁殖</translation>
+        <translation>允许看板娘创建分身</translation>
     </message>
     <message>
         <source>Windowed Mode</source>
@@ -101,7 +101,7 @@
     </message>
     <message>
         <source>Detach Speed</source>
-        <translation>脱离速度</translation>
+        <translation>窗口脱离速度</translation>
     </message>
     <message>
         <source>Threshold (px/tick):</source>
@@ -145,8 +145,8 @@
         <translation>查看许可证</translation>
     </message>
     <message>
-        <source>Website</source>
-        <translation>网站</translation>
+        <source>Shijima Website</source>
+        <translation>Shijima网站</translation>
     </message>
     <message>
         <source>Report Issue</source>
@@ -194,16 +194,16 @@
         <translation>无法从指定的压缩包中导入任何看板娘。</translation>
     </message>
     <message>
-        <source>Welcome to Shijima! Get started by dragging and dropping a shimeji archive to the manager window. You can also import archives by selecting File &gt; Import.</source>
-        <translation>欢迎使用 Shijima！将看板娘压缩包拖放到管理器窗口即可开始。您也可以通过选择 文件 &gt; 导入 来导入压缩包。</translation>
+        <source>Welcome to NeurolingsCE! Get started by dragging and dropping a shimeji archive to the manager window. You can also import archives by selecting File &gt; Import.</source>
+        <translation>欢迎使用 NeurolingsCE！将看板娘压缩包拖放到管理器窗口即可开始。您也可以通过选择 文件 &gt; 导入 来导入压缩包。</translation>
     </message>
     <message>
-        <source>Close Shijima-Qt</source>
-        <translation>关闭 Shijima-Qt</translation>
+        <source>Close NeurolingsCE</source>
+        <translation>关闭 NeurolingsCE</translation>
     </message>
     <message>
-        <source>Do you want to close Shijima-Qt?</source>
-        <translation>确定要关闭 Shijima-Qt 吗？</translation>
+        <source>Do you want to close NeurolingsCE?</source>
+        <translation>确定要关闭 NeurolingsCE 吗？</translation>
     </message>
 </context>
 <context>
@@ -294,12 +294,12 @@
 <context>
     <name>main</name>
     <message>
-        <source>Shijima-Qt is already running!</source>
-        <translation>Shijima-Qt 已在运行！</translation>
+        <source>NeurolingsCE is already running!</source>
+        <translation>NeurolingsCE 已在运行！</translation>
     </message>
     <message>
-        <source>Shijima-Qt failed to start. Reason: </source>
-        <translation>Shijima-Qt 启动失败。原因：</translation>
+        <source>NeurolingsCE failed to start. Reason: </source>
+        <translation>NeurolingsCE 启动失败。原因：</translation>
     </message>
 </context>
 </TS>
