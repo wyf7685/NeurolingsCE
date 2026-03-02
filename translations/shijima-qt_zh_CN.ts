@@ -3,6 +3,7 @@
 <TS version="2.1" language="zh_CN">
 <context>
     <name>ShijimaManager</name>
+    <!-- Tray menu strings -->
     <message>
         <source>Hide</source>
         <translation>隐藏</translation>
@@ -27,53 +28,64 @@
         <source>Quit</source>
         <translation>退出</translation>
     </message>
+    <!-- Window title and status bar -->
     <message>
-        <source>Shijima-Qt</source>
-        <translation>Shijima-Qt</translation>
+        <source>NeurolingsCE — Mascot Manager</source>
+        <translation>NeurolingsCE — 看板娘管理器</translation>
     </message>
     <message>
-        <source>File</source>
-        <translation>文件</translation>
+        <source>  Mascots: %1  |  Templates: %2</source>
+        <translation>  当前看板娘数量: %1  |  看板娘模板数: %2</translation>
+    </message>
+    <!-- Home page -->
+    <message>
+        <source>Home</source>
+        <translation>主页</translation>
     </message>
     <message>
-        <source>Import shimeji...</source>
-        <translation>导入看板娘...</translation>
+        <source>Spawn Random</source>
+        <translation>随机生成</translation>
     </message>
     <message>
-        <source>Show shimeji folder</source>
-        <translation>打开看板娘文件夹</translation>
+        <source>Import</source>
+        <translation>导入</translation>
     </message>
     <message>
-        <source>Edit</source>
-        <translation>编辑</translation>
+        <source>Delete</source>
+        <translation>删除</translation>
     </message>
     <message>
-        <source>Delete shimeji</source>
-        <translation>删除看板娘</translation>
+        <source>Show Folder</source>
+        <translation>打开文件夹</translation>
     </message>
+    <!-- Settings page -->
     <message>
         <source>Settings</source>
         <translation>设置</translation>
     </message>
     <message>
-        <source>Enable multiplication</source>
-        <translation>启用繁殖</translation>
+        <source>Multiplication</source>
+        <translation>繁殖</translation>
     </message>
     <message>
-        <source>Windowed mode</source>
+        <source>Windowed Mode</source>
         <translation>窗口模式</translation>
     </message>
     <message>
-        <source>Windowed mode background...</source>
-        <translation>窗口模式背景...</translation>
+        <source>Background Color</source>
+        <translation>背景颜色</translation>
     </message>
     <message>
         <source>Scale</source>
         <translation>缩放</translation>
     </message>
     <message>
-        <source>Custom... (%1)</source>
-        <translation>自定义... (%1)</translation>
+        <source>Custom Scale</source>
+        <translation>自定义缩放</translation>
+    </message>
+    <message>
+        <source>Adjust Scale:</source>
+        <translation>调整缩放:</translation>
     </message>
     <message>
         <source>Save</source>
@@ -84,24 +96,25 @@
         <translation>语言</translation>
     </message>
     <message>
-        <source>Help</source>
-        <translation>帮助</translation>
+        <source>Select Language</source>
+        <translation>选择语言</translation>
     </message>
     <message>
-        <source>View Licenses</source>
-        <translation>查看许可证</translation>
+        <source>Detach Speed</source>
+        <translation>脱离速度</translation>
     </message>
     <message>
-        <source>Visit Shijima Homepage</source>
-        <translation>访问 Shijima 主页</translation>
+        <source>Threshold (px/tick):</source>
+        <translation>阈值 (像素/帧):</translation>
     </message>
-    <message>
-        <source>Report Issue</source>
-        <translation>报告问题</translation>
-    </message>
+    <!-- About page -->
     <message>
         <source>About</source>
         <translation>关于</translation>
+    </message>
+    <message>
+        <source>About NeurolingsCE</source>
+        <translation>关于 NeurolingsCE</translation>
     </message>
     <message>
         <source>A cross-platform shimeji desktop pet runner.</source>
@@ -128,28 +141,25 @@
         <translation>交流QQ群</translation>
     </message>
     <message>
+        <source>View Licenses</source>
+        <translation>查看许可证</translation>
+    </message>
+    <message>
+        <source>Website</source>
+        <translation>网站</translation>
+    </message>
+    <message>
+        <source>Report Issue</source>
+        <translation>报告问题</translation>
+    </message>
+    <message>
         <source>Close</source>
         <translation>关闭</translation>
     </message>
+    <!-- Dialogs -->
     <message>
-        <source>Custom Scale</source>
-        <translation>自定义缩放</translation>
-    </message>
-    <message>
-        <source>Adjust the display scale of mascots:</source>
-        <translation>调整看板娘的显示缩放：</translation>
-    </message>
-    <message>
-        <source>NeurolingsCE — Mascot Manager</source>
-        <translation>NeurolingsCE — 看板娘管理器</translation>
-    </message>
-    <message>
-        <source>  Mascots: %1  |  Templates: %2</source>
-        <translation>  当前看板娘数量: %1  |  看板娘模板数: %2</translation>
-    </message>
-    <message>
-        <source>About NeurolingsCE</source>
-        <translation>关于 NeurolingsCE</translation>
+        <source>Delete shimeji</source>
+        <translation>删除看板娘</translation>
     </message>
     <message>
         <source>Choose shimeji archive...</source>
@@ -184,10 +194,6 @@
         <translation>无法从指定的压缩包中导入任何看板娘。</translation>
     </message>
     <message>
-        <source>Import</source>
-        <translation>导入</translation>
-    </message>
-    <message>
         <source>Welcome to Shijima! Get started by dragging and dropping a shimeji archive to the manager window. You can also import archives by selecting File &gt; Import.</source>
         <translation>欢迎使用 Shijima！将看板娘压缩包拖放到管理器窗口即可开始。您也可以通过选择 文件 &gt; 导入 来导入压缩包。</translation>
     </message>
@@ -198,24 +204,6 @@
     <message>
         <source>Do you want to close Shijima-Qt?</source>
         <translation>确定要关闭 Shijima-Qt 吗？</translation>
-    </message>
-    <message>
-        <source>Window detach speed...</source>
-        <translation>窗口脱离速度...</translation>
-    </message>
-    <message>
-        <source>Window Detach Speed</source>
-        <translation>窗口脱离速度</translation>
-    </message>
-    <message>
-        <source>When a window moves faster than this threshold, the mascot will gradually detach and fall.
-Set to 0 to disable detachment.</source>
-        <translation>当窗口移动速度超过此阈值时，看板娘会逐渐脱离并掉落。
-设为 0 可禁用脱离功能。</translation>
-    </message>
-    <message>
-        <source> px/tick</source>
-        <translation> 像素/帧</translation>
     </message>
 </context>
 <context>
@@ -262,6 +250,10 @@ Set to 0 to disable detachment.</source>
 </context>
 <context>
     <name>ShimejiInspectorDialog</name>
+    <message>
+        <source>Inspector — %1</source>
+        <translation>检查器 — %1</translation>
+    </message>
     <message>
         <source>Window</source>
         <translation>窗口</translation>
