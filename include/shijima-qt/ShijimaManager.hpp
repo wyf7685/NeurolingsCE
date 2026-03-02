@@ -38,9 +38,11 @@
 #include "shijima-qt/ShijimaHttpApi.hpp"
 #include <condition_variable>
 #include <QTranslator>
+#include <QStatusBar>
 
 class QVBoxLayout;
 class QWidget;
+class QLabel;
 
 class ShijimaManager : public PlatformWidget<QMainWindow>
 {
@@ -101,6 +103,7 @@ private:
     void tick();
     void retranslateUi();
     void switchLanguage(const QString &langCode);
+    void updateStatusBar();
     QScreen *mascotScreen();
     QColor m_sandboxBackground;
     QAction *m_windowedModeAction;
@@ -136,4 +139,5 @@ private:
     QTranslator *m_translator;
     QTranslator *m_qtTranslator;
     QString m_currentLanguage;
+    QLabel *m_statusLabel = nullptr;
 };

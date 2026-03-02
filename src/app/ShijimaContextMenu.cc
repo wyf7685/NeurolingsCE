@@ -25,7 +25,7 @@ ShijimaContextMenu::ShijimaContextMenu(ShijimaWidget *parent)
 {
     QAction *action;
 
-    // Behaviors menu   
+    // --- Behaviors submenu ---
     {
         std::vector<std::string> behaviors;
         auto &list = parent->m_mascot->initial_behavior_list();
@@ -35,7 +35,7 @@ ShijimaContextMenu::ShijimaContextMenu(ShijimaWidget *parent)
                 behaviors.push_back(behavior->name);
             }
         }
-        auto behaviorsMenu = addMenu(tr("Behaviors"));
+        auto behaviorsMenu = addMenu(QString::fromUtf8("\xf0\x9f\x8e\xad ") + tr("Behaviors"));
         for (std::string &behavior : behaviors) {
             action = behaviorsMenu->addAction(QString::fromStdString(behavior));
             connect(action, &QAction::triggered, [this, behavior](){
@@ -44,20 +44,11 @@ ShijimaContextMenu::ShijimaContextMenu(ShijimaWidget *parent)
         }
     }
 
-    // Show manager
-    action = addAction(tr("Show manager"));
-    connect(action, &QAction::triggered, [](){
-        ShijimaManager::defaultManager()->setManagerVisible(true);
-    });
+    addSeparator();
 
-    // Inspect
-    action = addAction(tr("Inspect"));
-    connect(action, &QAction::triggered, [this](){
-        shijimaParent()->showInspector();
-    });
-
+    // --- Control group ---
     // Pause checkbox
-    action = addAction(tr("Pause"));
+    action = addAction(QString::fromUtf8("\xe2\x8f\xb8 ") + tr("Pause"));
     action->setCheckable(true);
     action->setChecked(parent->m_paused);
     connect(action, &QAction::triggered, [this](bool checked){
@@ -65,12 +56,30 @@ ShijimaContextMenu::ShijimaContextMenu(ShijimaWidget *parent)
     });
 
     // Call another
-    action = addAction(tr("Call another"));
+    action = addAction(QString::fromUtf8("\xe2\x9c\xa8 ") + tr("Call another"));
     connect(action, &QAction::triggered, [this](){
         ShijimaManager::defaultManager()->spawn(this->shijimaParent()->mascotName()
             .toStdString());
     });
 
+    addSeparator();
+
+    // --- Management group ---
+    // Show manager
+    action = addAction(QString::fromUtf8("\xf0\x9f\x93\x8b ") + tr("Show manager"));
+    connect(action, &QAction::triggered, [](){
+        ShijimaManager::defaultManager()->setManagerVisible(true);
+    });
+
+    // Inspect
+    action = addAction(QString::fromUtf8("\xf0\x9f\x94\x8d ") + tr("Inspect"));
+    connect(action, &QAction::triggered, [this](){
+        shijimaParent()->showInspector();
+    });
+
+    addSeparator();
+
+    // --- Dismiss group ---
     // Dismiss all but one
     action = addAction(tr("Dismiss all but one"));
     connect(action, &QAction::triggered, [this](){
@@ -84,7 +93,7 @@ ShijimaContextMenu::ShijimaContextMenu(ShijimaWidget *parent)
     });
 
     // Dismiss
-    action = addAction(tr("Dismiss"));
+    action = addAction(QString::fromUtf8("\xc3\x97 ") + tr("Dismiss"));
     connect(action, &QAction::triggered, parent, &ShijimaWidget::closeAction);
 }
 

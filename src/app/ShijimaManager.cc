@@ -71,6 +71,9 @@
 #include <QSystemTrayIcon>
 #include <QMenu>
 #include <QStyle>
+#include <QDoubleSpinBox>
+#include <QHBoxLayout>
+#include <QSignalBlocker>
 
 #define SHIJIMAQT_SUBTICK_COUNT 4
 
@@ -548,36 +551,70 @@ void ShijimaManager::buildToolbar() {
                 customAction, makeCustomActionText, submenu, makeScaleText]()
             {
                 QDialog dialog { this };
-                QFormLayout layout;
-                dialog.setLayout(&layout);
-                QSlider slider { Qt::Horizontal };
-                QLabel label;
-                QPushButton button;
-                button.setText(tr("Save"));
-                label.setMinimumWidth(80);
-                slider.setMinimumWidth(300);
-                layout.addRow(&label, &slider);
-                layout.addRow(&button);
-                label.setText(makeScaleText(m_userScale));
-                slider.setMinimum(100);
-                slider.setMaximum(10000);
-                slider.setValue(static_cast<int>(m_userScale * 1000.0));
-                connect(&slider, &QSlider::valueChanged,
-                    [this, &label, makeScaleText](int value)
+                dialog.setWindowTitle(tr("Custom Scale"));
+                dialog.setMinimumWidth(380);
+                QVBoxLayout *mainLayout = new QVBoxLayout;
+                dialog.setLayout(mainLayout);
+
+                // Description label
+                QLabel *descLabel = new QLabel(tr("Adjust the display scale of mascots:"));
+                descLabel->setStyleSheet("color: #6c757d; margin-bottom: 4px;");
+                mainLayout->addWidget(descLabel);
+
+                // Slider + SpinBox row
+                QHBoxLayout *sliderRow = new QHBoxLayout;
+                QSlider *slider = new QSlider(Qt::Horizontal);
+                slider->setMinimum(100);
+                slider->setMaximum(10000);
+                slider->setValue(static_cast<int>(m_userScale * 1000.0));
+
+                QDoubleSpinBox *spinBox = new QDoubleSpinBox;
+                spinBox->setRange(0.100, 10.000);
+                spinBox->setDecimals(3);
+                spinBox->setSingleStep(0.050);
+                spinBox->setSuffix("x");
+                spinBox->setValue(m_userScale);
+                spinBox->setMinimumWidth(90);
+
+                sliderRow->addWidget(slider, 1);
+                sliderRow->addWidget(spinBox);
+                mainLayout->addLayout(sliderRow);
+
+                // Sync slider -> spinBox
+                connect(slider, &QSlider::valueChanged,
+                    [this, spinBox](int value)
                 {
-                    m_userScale = value / 1000.0;
-                    label.setText(makeScaleText(m_userScale));
+                    double scale = value / 1000.0;
+                    m_userScale = scale;
+                    QSignalBlocker blocker(spinBox);
+                    spinBox->setValue(scale);
                 });
-                connect(&button, &QPushButton::clicked,
+
+                // Sync spinBox -> slider
+                connect(spinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+                    [this, slider](double value)
+                {
+                    m_userScale = value;
+                    QSignalBlocker blocker(slider);
+                    slider->setValue(static_cast<int>(value * 1000.0));
+                });
+
+                // Save button
+                QHBoxLayout *buttonRow = new QHBoxLayout;
+                buttonRow->addStretch();
+                QPushButton *saveButton = new QPushButton(tr("Save"));
+                saveButton->setMinimumWidth(100);
+                buttonRow->addWidget(saveButton);
+                mainLayout->addLayout(buttonRow);
+
+                connect(saveButton, &QPushButton::clicked,
                     [&dialog]()
                 {
-                    dialog.close();
+                    dialog.accept();
                 });
+
                 dialog.exec();
                 for (auto neighbour : submenu->actions()) {
-                    //double value = neighbour->text().sliced(0, 4).toDouble();
-                    //std::cout << std::fabs(m_userScale - value) << std::endl;
-                    //neighbour->setChecked(std::fabs(m_userScale - value) < 0.01);
                     neighbour->setChecked(false);
                 }
                 customAction->setText(makeCustomActionText());
@@ -630,18 +667,83 @@ void ShijimaManager::buildToolbar() {
         action = menu->addAction(tr("About"));
         connect(action, &QAction::triggered, [this](){
             QString version = QStringLiteral(NEUROLINGSCE_VERSION);
-            QMessageBox::about(this, tr("About NeurolingsCE"),
-                tr("<h3>NeurolingsCE v%4</h3>"
-                   "<p>A cross-platform shimeji desktop pet runner.</p>"
-                   "<p>Author: <a href='https://space.bilibili.com/178381315'>%1</a></p>"
-                   "<p>Based on <a href='https://github.com/pixelomer/Shijima-Qt'>Shijima-Qt</a> by pixelomer.</p>"
-                   "<p>Project: <a href='https://github.com/qingchenyouforcc/NeurolingsCE'>GitHub</a></p>"
-                   "<p>Feedback QQ Group: %2</p>"
-                   "<p>Chat QQ Group: %3</p>")
-                .arg(QString::fromUtf8("\xe8\xbd\xbb\xe5\xb0\x98\xe5\x91\xa6"))
-                .arg(QStringLiteral("423902950"))
-                .arg(QStringLiteral("125081756"))
+            QString authorName = QString::fromUtf8("\xe8\xbd\xbb\xe5\xb0\x98\xe5\x91\xa6");
+
+            QDialog *aboutDialog = new QDialog(this);
+            aboutDialog->setWindowTitle(tr("About NeurolingsCE"));
+            aboutDialog->setFixedWidth(420);
+            aboutDialog->setAttribute(Qt::WA_DeleteOnClose);
+
+            QVBoxLayout *layout = new QVBoxLayout;
+            layout->setSpacing(12);
+            layout->setContentsMargins(24, 24, 24, 24);
+            aboutDialog->setLayout(layout);
+
+            // App icon
+            QLabel *iconLabel = new QLabel;
+            QIcon appIcon = qApp->windowIcon();
+            if (!appIcon.isNull()) {
+                iconLabel->setPixmap(appIcon.pixmap(64, 64));
+            }
+            iconLabel->setAlignment(Qt::AlignCenter);
+            layout->addWidget(iconLabel);
+
+            // Title
+            QLabel *titleLabel = new QLabel(
+                QStringLiteral("<h2 style='color: #303f9f; margin: 0;'>NeurolingsCE</h2>"));
+            titleLabel->setAlignment(Qt::AlignCenter);
+            layout->addWidget(titleLabel);
+
+            // Version badge
+            QLabel *versionLabel = new QLabel(
+                QString("<span style='background-color: #e8eaf6; color: #5c6bc0; "
+                    "padding: 3px 12px; border-radius: 10px; font-size: 12px;'>v%1</span>")
                 .arg(version));
+            versionLabel->setAlignment(Qt::AlignCenter);
+            layout->addWidget(versionLabel);
+
+            // Description
+            QLabel *descLabel = new QLabel(
+                tr("A cross-platform shimeji desktop pet runner."));
+            descLabel->setAlignment(Qt::AlignCenter);
+            descLabel->setStyleSheet("color: #6c757d; margin: 4px 0;");
+            layout->addWidget(descLabel);
+
+            // Info card
+            QLabel *infoLabel = new QLabel(
+                tr("<table cellpadding='4' style='color: #3c4043;'>"
+                   "<tr><td style='color: #5c6bc0; font-weight: bold;'>Author</td>"
+                   "<td><a href='https://space.bilibili.com/178381315' "
+                   "style='color: #5c6bc0; text-decoration: none;'>%1</a></td></tr>"
+                   "<tr><td style='color: #5c6bc0; font-weight: bold;'>Based on</td>"
+                   "<td><a href='https://github.com/pixelomer/Shijima-Qt' "
+                   "style='color: #5c6bc0; text-decoration: none;'>Shijima-Qt</a> by pixelomer</td></tr>"
+                   "<tr><td style='color: #5c6bc0; font-weight: bold;'>Project</td>"
+                   "<td><a href='https://github.com/qingchenyouforcc/NeurolingsCE' "
+                   "style='color: #5c6bc0; text-decoration: none;'>GitHub</a></td></tr>"
+                   "<tr><td style='color: #5c6bc0; font-weight: bold;'>Feedback QQ</td>"
+                   "<td>423902950</td></tr>"
+                   "<tr><td style='color: #5c6bc0; font-weight: bold;'>Chat QQ</td>"
+                   "<td>125081756</td></tr>"
+                   "</table>")
+                .arg(authorName));
+            infoLabel->setOpenExternalLinks(true);
+            infoLabel->setAlignment(Qt::AlignCenter);
+            infoLabel->setStyleSheet("background-color: #ffffff; border: 1px solid #e0e3eb; "
+                "border-radius: 8px; padding: 12px;");
+            layout->addWidget(infoLabel);
+
+            // Close button
+            QHBoxLayout *buttonRow = new QHBoxLayout;
+            buttonRow->addStretch();
+            QPushButton *closeButton = new QPushButton(tr("Close"));
+            closeButton->setMinimumWidth(100);
+            connect(closeButton, &QPushButton::clicked, aboutDialog, &QDialog::accept);
+            buttonRow->addWidget(closeButton);
+            buttonRow->addStretch();
+            layout->addLayout(buttonRow);
+
+            aboutDialog->exec();
         });
     }
 }
@@ -870,6 +972,16 @@ void ShijimaManager::setWindowedMode(bool windowedMode) {
     }
 }
 
+void ShijimaManager::updateStatusBar() {
+    if (m_statusLabel == nullptr) {
+        return;
+    }
+    int mascotCount = static_cast<int>(m_mascots.size());
+    int templateCount = m_loadedMascots.size();
+    m_statusLabel->setText(tr("  Mascots: %1  |  Templates: %2")
+        .arg(mascotCount).arg(templateCount));
+}
+
 ShijimaManager::ShijimaManager(QWidget *parent):
     PlatformWidget(parent, PlatformWidget::ShowOnAllDesktops),
     m_sandboxWidget(nullptr),
@@ -927,6 +1039,12 @@ ShijimaManager::ShijimaManager(QWidget *parent):
     m_listWidget.installEventFilter(this);
     m_listWidget.setSelectionMode(QListWidget::ExtendedSelection);
     setCentralWidget(&m_listWidget);
+
+    // Window title and status bar
+    setWindowTitle(tr("NeurolingsCE — Mascot Manager"));
+    m_statusLabel = new QLabel(this);
+    statusBar()->addWidget(m_statusLabel, 1);
+    updateStatusBar();
 
     // Load saved language before building UI
     QString savedLang = m_settings.value("language", "en").toString();
@@ -1286,6 +1404,8 @@ void ShijimaManager::tick() {
         // All mascots self-destructed, show manager
         setManagerVisible(true);
     }
+
+    updateStatusBar();
 }
 
 ShijimaWidget *ShijimaManager::hitTest(QPoint const& screenPos) {
