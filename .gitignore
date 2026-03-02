@@ -181,3 +181,5 @@ libshijima/build/
 libshimejifinder/build/
 /nul
 /src/platform/Platform/AGENTS.md
+/build_test.bat
+/build_output.txt
