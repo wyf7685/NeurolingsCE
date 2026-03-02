@@ -60,6 +60,7 @@
 #include <QKeySequence>
 #include <QListWidget>
 #include <QMessageBox>
+#include <QProcess>
 #include <QUrl>
 #include <QtConcurrent>
 #include <string>
@@ -1692,6 +1693,21 @@ void ShijimaManager::switchLanguage(const QString &langCode) {
         if (m_qtTranslator->load("qt_" + langCode, ":/i18n")) {
             qApp->installTranslator(m_qtTranslator);
         }
+    }
+
+    if (!m_constructing) {
+        QMessageBox::information(this,
+            tr("Language Changed"),
+            tr("The application will restart to apply the new language."));
+
+        // Stop single-instance HTTP API first to avoid restart race.
+        m_httpApi.stop();
+
+        const QString program = QCoreApplication::applicationFilePath();
+        const QStringList args = QCoreApplication::arguments().mid(1);
+        QProcess::startDetached(program, args);
+        m_allowClose = true;
+        closeWindow();
     }
 }
 
