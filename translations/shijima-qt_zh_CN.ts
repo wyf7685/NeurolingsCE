@@ -199,6 +199,24 @@
         <source>Do you want to close Shijima-Qt?</source>
         <translation>确定要关闭 Shijima-Qt 吗？</translation>
     </message>
+    <message>
+        <source>Window detach speed...</source>
+        <translation>窗口脱离速度...</translation>
+    </message>
+    <message>
+        <source>Window Detach Speed</source>
+        <translation>窗口脱离速度</translation>
+    </message>
+    <message>
+        <source>When a window moves faster than this threshold, the mascot will gradually detach and fall.
+Set to 0 to disable detachment.</source>
+        <translation>当窗口移动速度超过此阈值时，看板娘会逐渐脱离并掉落。
+设为 0 可禁用脱离功能。</translation>
+    </message>
+    <message>
+        <source> px/tick</source>
+        <translation> 像素/帧</translation>
+    </message>
 </context>
 <context>
     <name>ShijimaContextMenu</name>

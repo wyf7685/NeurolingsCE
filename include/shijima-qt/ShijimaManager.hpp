@@ -140,4 +140,6 @@ private:
     QTranslator *m_qtTranslator;
     QString m_currentLanguage;
     QLabel *m_statusLabel = nullptr;
+    // Window-speed detachment settings
+    double m_detachThreshold = 30.0;  // pixels per tick speed threshold for detachment
 };

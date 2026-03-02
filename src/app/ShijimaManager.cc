@@ -72,6 +72,7 @@
 #include <QMenu>
 #include <QStyle>
 #include <QDoubleSpinBox>
+#include <QSpinBox>
 #include <QHBoxLayout>
 #include <QSignalBlocker>
 
@@ -644,6 +645,73 @@ void ShijimaManager::buildToolbar() {
             });
             langGroup->addAction(action);
         }
+
+        // Window detachment threshold
+        {
+            static const QString key = "detachThreshold";
+            action = menu->addAction(tr("Window detach speed..."));
+            connect(action, &QAction::triggered, [this](){
+                QDialog dialog { this };
+                dialog.setWindowTitle(tr("Window Detach Speed"));
+                dialog.setMinimumWidth(380);
+                QVBoxLayout *mainLayout = new QVBoxLayout;
+                dialog.setLayout(mainLayout);
+
+                QLabel *descLabel = new QLabel(
+                    tr("When a window moves faster than this threshold, "
+                       "the mascot will gradually detach and fall.\n"
+                       "Set to 0 to disable detachment."));
+                descLabel->setWordWrap(true);
+                descLabel->setStyleSheet("color: #6c757d; margin-bottom: 4px;");
+                mainLayout->addWidget(descLabel);
+
+                QHBoxLayout *sliderRow = new QHBoxLayout;
+                QSlider *slider = new QSlider(Qt::Horizontal);
+                slider->setMinimum(0);
+                slider->setMaximum(200);
+                slider->setValue(static_cast<int>(m_detachThreshold));
+
+                QSpinBox *spinBox = new QSpinBox;
+                spinBox->setRange(0, 200);
+                spinBox->setSuffix(tr(" px/tick"));
+                spinBox->setValue(static_cast<int>(m_detachThreshold));
+                spinBox->setMinimumWidth(110);
+
+                sliderRow->addWidget(slider, 1);
+                sliderRow->addWidget(spinBox);
+                mainLayout->addLayout(sliderRow);
+
+                connect(slider, &QSlider::valueChanged,
+                    [spinBox](int value)
+                {
+                    QSignalBlocker blocker(spinBox);
+                    spinBox->setValue(value);
+                });
+
+                connect(spinBox, QOverload<int>::of(&QSpinBox::valueChanged),
+                    [slider](int value)
+                {
+                    QSignalBlocker blocker(slider);
+                    slider->setValue(value);
+                });
+
+                QHBoxLayout *buttonRow = new QHBoxLayout;
+                buttonRow->addStretch();
+                QPushButton *saveButton = new QPushButton(tr("Save"));
+                saveButton->setMinimumWidth(100);
+                buttonRow->addWidget(saveButton);
+                mainLayout->addLayout(buttonRow);
+
+                connect(saveButton, &QPushButton::clicked,
+                    &dialog, &QDialog::accept);
+
+                if (dialog.exec() == QDialog::Accepted) {
+                    m_detachThreshold = spinBox->value();
+                    m_settings.setValue(key,
+                        QVariant::fromValue(m_detachThreshold));
+                }
+            });
+        }
     }
 
     menu = menuBar()->addMenu(tr("Help"));
@@ -1058,6 +1126,10 @@ ShijimaManager::ShijimaManager(QWidget *parent):
         switchLanguage(savedLang);
     }
 
+    // Load detachment threshold setting
+    m_detachThreshold = m_settings.value("detachThreshold",
+        QVariant::fromValue(30.0)).toDouble();
+
     buildToolbar();
     m_constructing = false;
 
@@ -1163,6 +1235,24 @@ void ShijimaManager::updateEnvironment(QScreen *screen) {
             env->active_ie.dx = m_currentWindow.x - m_previousWindow.x;
             if (env->active_ie.dx == 0) {
                 env->active_ie.dx = m_currentWindow.width - m_previousWindow.width;
+            }
+
+            // Gradual detachment: dampen dx/dy based on window speed
+            if (m_detachThreshold > 0) {
+                double speed = std::sqrt(env->active_ie.dx * env->active_ie.dx
+                    + env->active_ie.dy * env->active_ie.dy);
+                double upperBound = m_detachThreshold * 3.0;
+                if (speed >= upperBound) {
+                    // Full detachment: window moved too fast
+                    env->active_ie = { -50, -50, -50, -50 };
+                }
+                else if (speed > m_detachThreshold) {
+                    // Partial damping: linearly reduce follow ratio
+                    double ratio = 1.0 - (speed - m_detachThreshold)
+                        / (upperBound - m_detachThreshold);
+                    env->active_ie.dx *= ratio;
+                    env->active_ie.dy *= ratio;
+                }
             }
         }
     }
