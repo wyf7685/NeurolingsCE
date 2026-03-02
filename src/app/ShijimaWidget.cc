@@ -125,8 +125,15 @@ void ShijimaWidget::paintEvent(QPaintEvent *event) {
     auto &image = asset.image(isMirroredRender());
     auto scaledSize = image.size() / m_drawScale;
     QPainter painter(this);
-    painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
-    painter.drawImage(QRect { m_drawOrigin, scaledSize }, image);
+    if (m_drawScale >= 4.0) {
+        // High shrink ratio: use area-averaging pre-scale for better quality
+        auto preScaled = image.scaled(scaledSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+        painter.drawImage(m_drawOrigin, preScaled);
+    }
+    else {
+        painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
+        painter.drawImage(QRect { m_drawOrigin, scaledSize }, image);
+    }
 #ifdef __linux__
     if (Platform::useWindowMasks()) {
         m_windowMask = QBitmap::fromPixmap(asset.mask(isMirroredRender())

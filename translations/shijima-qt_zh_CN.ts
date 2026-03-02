@@ -145,7 +145,7 @@
     </message>
     <message>
         <source>  Mascots: %1  |  Templates: %2</source>
-        <translation>  看板娘: %1  |  默认看板娘: %2</translation>
+        <translation>  当前看板娘数量: %1  |  看板娘模板数: %2</translation>
     </message>
     <message>
         <source>About NeurolingsCE</source>
