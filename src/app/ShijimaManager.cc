@@ -710,23 +710,28 @@ void ShijimaManager::buildToolbar() {
             layout->addWidget(descLabel);
 
             // Info card
-            QLabel *infoLabel = new QLabel(
-                tr("<table cellpadding='4' style='color: #3c4043;'>"
-                   "<tr><td style='color: #5c6bc0; font-weight: bold;'>Author</td>"
-                   "<td><a href='https://space.bilibili.com/178381315' "
-                   "style='color: #5c6bc0; text-decoration: none;'>%1</a></td></tr>"
-                   "<tr><td style='color: #5c6bc0; font-weight: bold;'>Based on</td>"
-                   "<td><a href='https://github.com/pixelomer/Shijima-Qt' "
-                   "style='color: #5c6bc0; text-decoration: none;'>Shijima-Qt</a> by pixelomer</td></tr>"
-                   "<tr><td style='color: #5c6bc0; font-weight: bold;'>Project</td>"
-                   "<td><a href='https://github.com/qingchenyouforcc/NeurolingsCE' "
-                   "style='color: #5c6bc0; text-decoration: none;'>GitHub</a></td></tr>"
-                   "<tr><td style='color: #5c6bc0; font-weight: bold;'>Feedback QQ</td>"
-                   "<td>423902950</td></tr>"
-                   "<tr><td style='color: #5c6bc0; font-weight: bold;'>Chat QQ</td>"
-                   "<td>125081756</td></tr>"
-                   "</table>")
-                .arg(authorName));
+            QString infoHtml = QStringLiteral(
+                "<table cellpadding='4' style='color: #3c4043;'>"
+                "<tr><td style='color: #5c6bc0; font-weight: bold;'>%1</td>"
+                "<td><a href='https://space.bilibili.com/178381315' "
+                "style='color: #5c6bc0; text-decoration: none;'>%2</a></td></tr>"
+                "<tr><td style='color: #5c6bc0; font-weight: bold;'>%3</td>"
+                "<td><a href='https://github.com/pixelomer/Shijima-Qt' "
+                "style='color: #5c6bc0; text-decoration: none;'>Shijima-Qt</a> by pixelomer</td></tr>"
+                "<tr><td style='color: #5c6bc0; font-weight: bold;'>%4</td>"
+                "<td><a href='https://github.com/qingchenyouforcc/NeurolingsCE' "
+                "style='color: #5c6bc0; text-decoration: none;'>GitHub</a></td></tr>"
+                "<tr><td style='color: #5c6bc0; font-weight: bold;'>%5</td>"
+                "<td>423902950</td></tr>"
+                "<tr><td style='color: #5c6bc0; font-weight: bold;'>%6</td>"
+                "<td>125081756</td></tr>"
+                "</table>")
+                .arg(tr("Author"), authorName,
+                     tr("Based on"),
+                     tr("Project"),
+                     tr("Feedback QQ"),
+                     tr("Chat QQ"));
+            QLabel *infoLabel = new QLabel(infoHtml);
             infoLabel->setOpenExternalLinks(true);
             infoLabel->setAlignment(Qt::AlignCenter);
             infoLabel->setStyleSheet("background-color: #ffffff; border: 1px solid #e0e3eb; "

@@ -104,8 +104,48 @@
         <translation>关于</translation>
     </message>
     <message>
-        <source>&lt;h3&gt;NeurolingsCE v%4&lt;/h3&gt;&lt;p&gt;A cross-platform shimeji desktop pet runner.&lt;/p&gt;&lt;p&gt;Author: &lt;a href=&apos;https://space.bilibili.com/178381315&apos;&gt;%1&lt;/a&gt;&lt;/p&gt;&lt;p&gt;Based on &lt;a href=&apos;https://github.com/pixelomer/Shijima-Qt&apos;&gt;Shijima-Qt&lt;/a&gt; by pixelomer.&lt;/p&gt;&lt;p&gt;Project: &lt;a href=&apos;https://github.com/qingchenyouforcc/NeurolingsCE&apos;&gt;GitHub&lt;/a&gt;&lt;/p&gt;&lt;p&gt;Feedback QQ Group: %2&lt;/p&gt;&lt;p&gt;Chat QQ Group: %3&lt;/p&gt;</source>
-        <translation>&lt;h3&gt;NeurolingsCE v%4&lt;/h3&gt;&lt;p&gt;跨平台桌面看板娘应用。&lt;/p&gt;&lt;p&gt;作者：&lt;a href=&apos;https://space.bilibili.com/178381315&apos;&gt;%1&lt;/a&gt;&lt;/p&gt;&lt;p&gt;基于 pixelomer 的 &lt;a href=&apos;https://github.com/pixelomer/Shijima-Qt&apos;&gt;Shijima-Qt&lt;/a&gt;。&lt;/p&gt;&lt;p&gt;项目地址：&lt;a href=&apos;https://github.com/qingchenyouforcc/NeurolingsCE&apos;&gt;GitHub&lt;/a&gt;&lt;/p&gt;&lt;p&gt;反馈QQ群：%2&lt;/p&gt;&lt;p&gt;交流QQ群：%3&lt;/p&gt;</translation>
+        <source>A cross-platform shimeji desktop pet runner.</source>
+        <translation>跨平台桌面看板娘应用。</translation>
+    </message>
+    <message>
+        <source>Author</source>
+        <translation>作者</translation>
+    </message>
+    <message>
+        <source>Based on</source>
+        <translation>基于</translation>
+    </message>
+    <message>
+        <source>Project</source>
+        <translation>项目</translation>
+    </message>
+    <message>
+        <source>Feedback QQ</source>
+        <translation>反馈QQ群</translation>
+    </message>
+    <message>
+        <source>Chat QQ</source>
+        <translation>交流QQ群</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>关闭</translation>
+    </message>
+    <message>
+        <source>Custom Scale</source>
+        <translation>自定义缩放</translation>
+    </message>
+    <message>
+        <source>Adjust the display scale of mascots:</source>
+        <translation>调整看板娘的显示缩放：</translation>
+    </message>
+    <message>
+        <source>NeurolingsCE — Mascot Manager</source>
+        <translation>NeurolingsCE — 看板娘管理器</translation>
+    </message>
+    <message>
+        <source>  Mascots: %1  |  Templates: %2</source>
+        <translation>  看板娘: %1  |  默认看板娘: %2</translation>
     </message>
     <message>
         <source>About NeurolingsCE</source>
