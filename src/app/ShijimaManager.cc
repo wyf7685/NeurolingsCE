@@ -76,6 +76,17 @@
 #include <QHBoxLayout>
 #include <QSignalBlocker>
 
+#include <QCheckBox>
+#include <QRadioButton>
+#include <QDialogButtonBox>
+#include "ElaScrollPageArea.h"
+#include "ElaText.h"
+#include "ElaToggleSwitch.h"
+#include <QSlider>
+#include "ElaStatusBar.h"
+#include "ElaTheme.h"
+#include <QStyleHints>
+#include "ElaPushButton.h"
 #define SHIJIMAQT_SUBTICK_COUNT 4
 
 #ifndef NEUROLINGSCE_VERSION
@@ -105,6 +116,7 @@ static void dispatchToMainThread(std::function<void()> callback) {
     });
     QMetaObject::invokeMethod(timer, "start", Qt::QueuedConnection, Q_ARG(int, 0));
 }
+
 
 static ShijimaManager *m_defaultManager = nullptr;
 
@@ -361,7 +373,7 @@ void ShijimaManager::importAction() {
 
 void ShijimaManager::quitAction() {
     m_allowClose = true;
-    close();
+    closeWindow();
 }
 
 void ShijimaManager::deleteAction() {
@@ -429,396 +441,407 @@ void ShijimaManager::updateSandboxBackground() {
     }
 }
 
-void ShijimaManager::buildToolbar() {
-    QAction *action;
-    QMenu *menu;
-    QMenu *submenu;
-    
-    menu = menuBar()->addMenu(tr("File"));
-    {
-        action = menu->addAction(tr("Import shimeji..."));
-        connect(action, &QAction::triggered, this, &ShijimaManager::importAction);
+void ShijimaManager::setupNavigation() {
+    // ==================== HOME PAGE ====================
+    m_homePage = new QWidget(this);
+    auto *homeLayout = new QVBoxLayout(m_homePage);
+    homeLayout->setContentsMargins(10, 10, 10, 10);
+    homeLayout->setSpacing(8);
 
-        action = menu->addAction(tr("Show shimeji folder"));
-        connect(action, &QAction::triggered, [this](){
-            QDesktopServices::openUrl(QUrl::fromLocalFile(m_mascotsPath));
+    // Top action button row
+    auto *actionRow = new QHBoxLayout;
+    actionRow->setSpacing(8);
+
+    auto *btnSpawn = new ElaPushButton(tr("Spawn Random"));
+    connect(btnSpawn, &ElaPushButton::clicked, this, &ShijimaManager::spawnClicked);
+    actionRow->addWidget(btnSpawn);
+
+    auto *btnImport = new ElaPushButton(tr("Import"));
+    connect(btnImport, &ElaPushButton::clicked, this, &ShijimaManager::importAction);
+    actionRow->addWidget(btnImport);
+
+    auto *btnDelete = new ElaPushButton(tr("Delete"));
+    connect(btnDelete, &ElaPushButton::clicked, this, &ShijimaManager::deleteAction);
+    actionRow->addWidget(btnDelete);
+
+    auto *btnFolder = new ElaPushButton(tr("Show Folder"));
+    connect(btnFolder, &ElaPushButton::clicked, [this](){
+        QDesktopServices::openUrl(QUrl::fromLocalFile(m_mascotsPath));
+    });
+    actionRow->addWidget(btnFolder);
+
+    actionRow->addStretch();
+    homeLayout->addLayout(actionRow);
+
+    // Reparent listWidget into home page
+    m_listWidget.setParent(m_homePage);
+    homeLayout->addWidget(&m_listWidget, 1);
+
+    addPageNode(tr("Home"), m_homePage, ElaIconType::House);
+
+    // ==================== SETTINGS PAGE ====================
+    m_settingsPage = new QWidget(this);
+    auto *settingsLayout = new QVBoxLayout(m_settingsPage);
+    settingsLayout->setContentsMargins(10, 10, 10, 10);
+    settingsLayout->setSpacing(12);
+
+    // --- Multiplication ---
+    {
+        static const QString key = "multiplicationEnabled";
+        bool initial = m_settings.value(key, QVariant::fromValue(true)).toBool();
+        for (auto &env : m_env) env->allows_breeding = initial;
+
+        auto *area = new ElaScrollPageArea(m_settingsPage);
+        auto *row = new QHBoxLayout(area);
+        auto *label = new ElaText(tr("Multiplication"), m_settingsPage);
+        label->setWordWrap(false);
+        label->setTextPixelSize(15);
+        row->addWidget(label);
+        row->addStretch();
+        auto *toggle = new ElaToggleSwitch(m_settingsPage);
+        toggle->setIsToggled(initial);
+        connect(toggle, &ElaToggleSwitch::toggled, [this](bool checked){
+            for (auto &env : m_env) env->allows_breeding = checked;
+            m_settings.setValue("multiplicationEnabled", QVariant::fromValue(checked));
         });
-
-        action = menu->addAction(tr("Quit"));
-        connect(action, &QAction::triggered, this, &ShijimaManager::quitAction);
+        row->addWidget(toggle);
+        settingsLayout->addWidget(area);
     }
 
-    menu = menuBar()->addMenu(tr("Edit"));
+    // --- Windowed Mode ---
     {
-        action = menu->addAction(tr("Delete shimeji"), QKeySequence::StandardKey::Delete);
-        connect(action, &QAction::triggered, this, &ShijimaManager::deleteAction);
+        auto *area = new ElaScrollPageArea(m_settingsPage);
+        auto *row = new QHBoxLayout(area);
+        auto *label = new ElaText(tr("Windowed Mode"), m_settingsPage);
+        label->setWordWrap(false);
+        label->setTextPixelSize(15);
+        row->addWidget(label);
+        row->addStretch();
+        auto *toggle = new ElaToggleSwitch(m_settingsPage);
+        toggle->setIsToggled(windowedMode());
+
+        if (!m_windowedModeAction) m_windowedModeAction = new QAction(this);
+        m_windowedModeAction->setCheckable(true);
+        m_windowedModeAction->setChecked(windowedMode());
+
+        connect(toggle, &ElaToggleSwitch::toggled, [this](bool checked){
+            setWindowedMode(checked);
+        });
+        connect(m_windowedModeAction, &QAction::toggled, toggle, &ElaToggleSwitch::setIsToggled);
+        row->addWidget(toggle);
+        settingsLayout->addWidget(area);
     }
 
-    menu = menuBar()->addMenu(tr("Settings"));
+    // --- Background Color ---
     {
-        {
-            static const QString key = "multiplicationEnabled";
-            bool initial = m_settings.value(key, 
-                QVariant::fromValue(true)).toBool();
+        static const QString key = "windowedModeBackground";
+        QColor initial = m_settings.value(key, "#FF0000").toString();
+        m_sandboxBackground = initial;
+        updateSandboxBackground();
 
-            action = menu->addAction(tr("Enable multiplication"));
-            action->setCheckable(true);
-            action->setChecked(initial);
-            for (auto &env : m_env) {
-                env->allows_breeding = initial;
+        auto *area = new ElaScrollPageArea(m_settingsPage);
+        auto *row = new QHBoxLayout(area);
+        auto *label = new ElaText(tr("Background Color"), m_settingsPage);
+        label->setWordWrap(false);
+        label->setTextPixelSize(15);
+        row->addWidget(label);
+        row->addStretch();
+        auto *btn = new ElaPushButton("...", m_settingsPage);
+        connect(btn, &ElaPushButton::clicked, [this](){
+            QColorDialog dialog { this };
+            dialog.setCurrentColor(m_sandboxBackground);
+            if (dialog.exec() == 1) {
+                m_sandboxBackground = dialog.selectedColor();
+                m_settings.setValue("windowedModeBackground", colorToString(dialog.selectedColor()));
+                updateSandboxBackground();
             }
-            connect(action, &QAction::triggered, [this](bool checked){
-                for (auto &env : m_env) {
-                    env->allows_breeding = checked;
-                }
-                m_settings.setValue(key, QVariant::fromValue(checked));
-            });
-        }
-
-        {
-            action = menu->addAction(tr("Windowed mode"));
-            m_windowedModeAction = action;
-            action->setCheckable(true);
-            action->setChecked(false);
-            connect(action, &QAction::triggered, [this](bool checked){
-                setWindowedMode(checked);
-            });
-        }
-
-        {
-            static const QString key = "windowedModeBackground";
-
-            QColor initial = m_settings.value(key, "#FF0000").toString();
-
-            action = menu->addAction(tr("Windowed mode background..."));
-            m_sandboxBackground = initial;
-            updateSandboxBackground();
-            connect(action, &QAction::triggered, [this](){
-                QColorDialog dialog { this };
-                dialog.setCurrentColor(m_sandboxBackground);
-                int ret = dialog.exec();
-                if (ret == 1) {
-                    m_sandboxBackground = dialog.selectedColor();
-                    m_settings.setValue(key, colorToString(dialog.selectedColor()));
-                    updateSandboxBackground();
-                }
-            });
-        }
-
-        submenu = menu->addMenu(tr("Scale"));
-        {
-            static const QString key = "userScale";
-            m_userScale = m_settings.value(key,
-                QVariant::fromValue(1.0)).toDouble();
-            
-            auto makeScaleText = [](double scale){
-                return QString::asprintf("%.3lfx", scale);
-            };
-
-            auto makeCustomActionText = [this, makeScaleText]() {
-                return tr("Custom... (%1)").arg(makeScaleText(m_userScale));
-            };
-            QAction *customAction = submenu->addAction(makeCustomActionText());
-
-            #define addPreset(scale) do { \
-                action = submenu->addAction(#scale "x"); \
-                action->setCheckable(true); \
-                action->setChecked(std::fabs(m_userScale - scale) < 0.01); \
-                connect(action, &QAction::triggered, [this, customAction, \
-                    makeCustomActionText, action, submenu]() \
-                { \
-                    for (auto neighbour : submenu->actions()) { \
-                        neighbour->setChecked(false); \
-                    } \
-                    m_userScale = scale; \
-                    m_settings.setValue(key, QVariant::fromValue(scale)); \
-                    action->setChecked(true); \
-                    customAction->setText(makeCustomActionText()); \
-                }); \
-            } while (0)
-            
-            addPreset(0.25);
-            addPreset(0.50);
-            addPreset(0.75);
-            addPreset(1.00);
-            addPreset(1.25);
-            addPreset(1.50);
-            addPreset(1.75);
-            addPreset(2.00);
-
-            #undef addPreset
-
-            connect(customAction, &QAction::triggered, [this,
-                customAction, makeCustomActionText, submenu, makeScaleText]()
-            {
-                QDialog dialog { this };
-                dialog.setWindowTitle(tr("Custom Scale"));
-                dialog.setMinimumWidth(380);
-                QVBoxLayout *mainLayout = new QVBoxLayout;
-                dialog.setLayout(mainLayout);
-
-                // Description label
-                QLabel *descLabel = new QLabel(tr("Adjust the display scale of mascots:"));
-                descLabel->setStyleSheet("color: #6c757d; margin-bottom: 4px;");
-                mainLayout->addWidget(descLabel);
-
-                // Slider + SpinBox row
-                QHBoxLayout *sliderRow = new QHBoxLayout;
-                QSlider *slider = new QSlider(Qt::Horizontal);
-                slider->setMinimum(100);
-                slider->setMaximum(10000);
-                slider->setValue(static_cast<int>(m_userScale * 1000.0));
-
-                QDoubleSpinBox *spinBox = new QDoubleSpinBox;
-                spinBox->setRange(0.100, 10.000);
-                spinBox->setDecimals(3);
-                spinBox->setSingleStep(0.050);
-                spinBox->setSuffix("x");
-                spinBox->setValue(m_userScale);
-                spinBox->setMinimumWidth(90);
-
-                sliderRow->addWidget(slider, 1);
-                sliderRow->addWidget(spinBox);
-                mainLayout->addLayout(sliderRow);
-
-                // Sync slider -> spinBox
-                connect(slider, &QSlider::valueChanged,
-                    [this, spinBox](int value)
-                {
-                    double scale = value / 1000.0;
-                    m_userScale = scale;
-                    QSignalBlocker blocker(spinBox);
-                    spinBox->setValue(scale);
-                });
-
-                // Sync spinBox -> slider
-                connect(spinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-                    [this, slider](double value)
-                {
-                    m_userScale = value;
-                    QSignalBlocker blocker(slider);
-                    slider->setValue(static_cast<int>(value * 1000.0));
-                });
-
-                // Save button
-                QHBoxLayout *buttonRow = new QHBoxLayout;
-                buttonRow->addStretch();
-                QPushButton *saveButton = new QPushButton(tr("Save"));
-                saveButton->setMinimumWidth(100);
-                buttonRow->addWidget(saveButton);
-                mainLayout->addLayout(buttonRow);
-
-                connect(saveButton, &QPushButton::clicked,
-                    [&dialog]()
-                {
-                    dialog.accept();
-                });
-
-                dialog.exec();
-                for (auto neighbour : submenu->actions()) {
-                    neighbour->setChecked(false);
-                }
-                customAction->setText(makeCustomActionText());
-                m_settings.setValue(key, QVariant::fromValue(m_userScale));
-            });
-        }
-
-        // Language submenu
-        submenu = menu->addMenu(tr("Language"));
-        {
-            auto *langGroup = new QActionGroup(this);
-            langGroup->setExclusive(true);
-
-            action = submenu->addAction("English");
-            action->setCheckable(true);
-            action->setChecked(m_currentLanguage == "en");
-            connect(action, &QAction::triggered, [this]() {
-                switchLanguage("en");
-            });
-            langGroup->addAction(action);
-
-            action = submenu->addAction(QString::fromUtf8("\xe4\xb8\xad\xe6\x96\x87(\xe7\xae\x80\xe4\xbd\x93)"));
-            action->setCheckable(true);
-            action->setChecked(m_currentLanguage == "zh_CN");
-            connect(action, &QAction::triggered, [this]() {
-                switchLanguage("zh_CN");
-            });
-            langGroup->addAction(action);
-        }
-
-        // Window detachment threshold
-        {
-            static const QString key = "detachThreshold";
-            action = menu->addAction(tr("Window detach speed..."));
-            connect(action, &QAction::triggered, [this](){
-                QDialog dialog { this };
-                dialog.setWindowTitle(tr("Window Detach Speed"));
-                dialog.setMinimumWidth(380);
-                QVBoxLayout *mainLayout = new QVBoxLayout;
-                dialog.setLayout(mainLayout);
-
-                QLabel *descLabel = new QLabel(
-                    tr("When a window moves faster than this threshold, "
-                       "the mascot will gradually detach and fall.\n"
-                       "Set to 0 to disable detachment."));
-                descLabel->setWordWrap(true);
-                descLabel->setStyleSheet("color: #6c757d; margin-bottom: 4px;");
-                mainLayout->addWidget(descLabel);
-
-                QHBoxLayout *sliderRow = new QHBoxLayout;
-                QSlider *slider = new QSlider(Qt::Horizontal);
-                slider->setMinimum(0);
-                slider->setMaximum(200);
-                slider->setValue(static_cast<int>(m_detachThreshold));
-
-                QSpinBox *spinBox = new QSpinBox;
-                spinBox->setRange(0, 200);
-                spinBox->setSuffix(tr(" px/tick"));
-                spinBox->setValue(static_cast<int>(m_detachThreshold));
-                spinBox->setMinimumWidth(110);
-
-                sliderRow->addWidget(slider, 1);
-                sliderRow->addWidget(spinBox);
-                mainLayout->addLayout(sliderRow);
-
-                connect(slider, &QSlider::valueChanged,
-                    [spinBox](int value)
-                {
-                    QSignalBlocker blocker(spinBox);
-                    spinBox->setValue(value);
-                });
-
-                connect(spinBox, QOverload<int>::of(&QSpinBox::valueChanged),
-                    [slider](int value)
-                {
-                    QSignalBlocker blocker(slider);
-                    slider->setValue(value);
-                });
-
-                QHBoxLayout *buttonRow = new QHBoxLayout;
-                buttonRow->addStretch();
-                QPushButton *saveButton = new QPushButton(tr("Save"));
-                saveButton->setMinimumWidth(100);
-                buttonRow->addWidget(saveButton);
-                mainLayout->addLayout(buttonRow);
-
-                connect(saveButton, &QPushButton::clicked,
-                    &dialog, &QDialog::accept);
-
-                if (dialog.exec() == QDialog::Accepted) {
-                    m_detachThreshold = spinBox->value();
-                    m_settings.setValue(key,
-                        QVariant::fromValue(m_detachThreshold));
-                }
-            });
-        }
+        });
+        row->addWidget(btn);
+        settingsLayout->addWidget(area);
     }
 
-    menu = menuBar()->addMenu(tr("Help"));
+    // --- Scale ---
     {
-        action = menu->addAction(tr("View Licenses"));
-        connect(action, &QAction::triggered, [this](){
+        auto *area = new ElaScrollPageArea(m_settingsPage);
+        auto *row = new QHBoxLayout(area);
+        auto *label = new ElaText(tr("Scale"), m_settingsPage);
+        label->setWordWrap(false);
+        label->setTextPixelSize(15);
+        row->addWidget(label);
+        row->addStretch();
+        auto *btn = new ElaPushButton("...", m_settingsPage);
+        connect(btn, &ElaPushButton::clicked, [this](){
+            static const QString key = "userScale";
+            QDialog dialog { this };
+            dialog.setWindowTitle(tr("Custom Scale"));
+            dialog.setMinimumWidth(300);
+            auto mainLayout = new QVBoxLayout(&dialog);
+
+            auto slider = new QSlider(Qt::Horizontal);
+            slider->setRange(100, 10000);
+            slider->setValue(m_userScale * 1000);
+
+            auto spin = new QDoubleSpinBox;
+            spin->setRange(0.1, 10.0);
+            spin->setDecimals(3);
+            spin->setSingleStep(0.05);
+            spin->setValue(m_userScale);
+
+            connect(slider, &QSlider::valueChanged, [this, spin](int v){
+                m_userScale = v/1000.0;
+                spin->blockSignals(true);
+                spin->setValue(m_userScale);
+                spin->blockSignals(false);
+            });
+            connect(spin, QOverload<double>::of(&QDoubleSpinBox::valueChanged), [this, slider](double v){
+                m_userScale = v;
+                slider->blockSignals(true);
+                slider->setValue(v*1000);
+                slider->blockSignals(false);
+            });
+
+            mainLayout->addWidget(new QLabel(tr("Adjust Scale:")));
+            mainLayout->addWidget(slider);
+            mainLayout->addWidget(spin);
+
+            auto btnSave = new QPushButton(tr("Save"));
+            connect(btnSave, &QPushButton::clicked, &dialog, &QDialog::accept);
+            mainLayout->addWidget(btnSave);
+
+            if (dialog.exec() == QDialog::Accepted) {
+                m_settings.setValue(key, m_userScale);
+            }
+        });
+        row->addWidget(btn);
+        settingsLayout->addWidget(area);
+    }
+
+    // --- Language ---
+    {
+        auto *area = new ElaScrollPageArea(m_settingsPage);
+        auto *row = new QHBoxLayout(area);
+        auto *label = new ElaText(tr("Language"), m_settingsPage);
+        label->setWordWrap(false);
+        label->setTextPixelSize(15);
+        row->addWidget(label);
+        row->addStretch();
+        auto *btn = new ElaPushButton("...", m_settingsPage);
+        connect(btn, &ElaPushButton::clicked, [this](){
+            QDialog d(this);
+            d.setWindowTitle(tr("Select Language"));
+            auto l = new QVBoxLayout(&d);
+
+            auto btnEn = new QRadioButton("English");
+            auto btnZh = new QRadioButton("中文(简体)");
+
+            if (m_currentLanguage == "zh_CN") btnZh->setChecked(true);
+            else btnEn->setChecked(true);
+
+            l->addWidget(btnEn);
+            l->addWidget(btnZh);
+
+            auto bb = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+            connect(bb, &QDialogButtonBox::accepted, &d, &QDialog::accept);
+            connect(bb, &QDialogButtonBox::rejected, &d, &QDialog::reject);
+            l->addWidget(bb);
+
+            if (d.exec() == QDialog::Accepted) {
+                if (btnZh->isChecked()) switchLanguage("zh_CN");
+                else switchLanguage("en");
+            }
+        });
+        row->addWidget(btn);
+        settingsLayout->addWidget(area);
+    }
+
+    // --- Detach Speed ---
+    {
+        auto *area = new ElaScrollPageArea(m_settingsPage);
+        auto *row = new QHBoxLayout(area);
+        auto *label = new ElaText(tr("Detach Speed"), m_settingsPage);
+        label->setWordWrap(false);
+        label->setTextPixelSize(15);
+        row->addWidget(label);
+        row->addStretch();
+        auto *btn = new ElaPushButton("...", m_settingsPage);
+        connect(btn, &ElaPushButton::clicked, [this](){
+            static const QString key = "detachThreshold";
+            QDialog dialog(this);
+            dialog.setWindowTitle(tr("Detach Speed"));
+            auto l = new QVBoxLayout(&dialog);
+
+            auto slider = new QSlider(Qt::Horizontal);
+            slider->setRange(0, 200);
+            slider->setValue(m_detachThreshold);
+
+            auto spin = new QSpinBox;
+            spin->setRange(0, 200);
+            spin->setValue(m_detachThreshold);
+
+            connect(slider, &QSlider::valueChanged, spin, &QSpinBox::setValue);
+            connect(spin, QOverload<int>::of(&QSpinBox::valueChanged), slider, &QSlider::setValue);
+
+            l->addWidget(new QLabel(tr("Threshold (px/tick):")));
+            l->addWidget(slider);
+            l->addWidget(spin);
+
+            auto btnSave = new QPushButton(tr("Save"));
+            connect(btnSave, &QPushButton::clicked, &dialog, &QDialog::accept);
+            l->addWidget(btnSave);
+
+            if (dialog.exec() == QDialog::Accepted) {
+                m_detachThreshold = spin->value();
+                m_settings.setValue(key, m_detachThreshold);
+            }
+        });
+        row->addWidget(btn);
+        settingsLayout->addWidget(area);
+    }
+
+    settingsLayout->addStretch();
+    addFooterNode(tr("Settings"), m_settingsPage, m_settingsKey, 0, ElaIconType::GearComplex);
+
+    // ==================== ABOUT (footer, no page) ====================
+    addFooterNode(tr("About"), m_aboutKey, 0, ElaIconType::User);
+    connect(this, &ElaWindow::navigationNodeClicked, [this](ElaNavigationType::NavigationNodeType nodeType, QString nodeKey){
+        if (nodeKey != m_aboutKey) return;
+        Q_UNUSED(nodeType);
+
+        QString version = QStringLiteral(NEUROLINGSCE_VERSION);
+        QString authorName = QString::fromUtf8("\xe8\xbd\xbb\xe5\xb0\x98\xe5\x91\xa6");
+
+        QDialog *aboutDialog = new QDialog(this);
+        aboutDialog->setWindowTitle(tr("About NeurolingsCE"));
+        aboutDialog->setFixedWidth(420);
+        aboutDialog->setAttribute(Qt::WA_DeleteOnClose);
+
+        // Theme-aware colors
+        auto themeMode = eTheme->getThemeMode();
+        QString primaryColor = ElaThemeColor(themeMode, PrimaryNormal).name();
+        QString textColor = ElaThemeColor(themeMode, BasicText).name();
+        QString detailsColor = ElaThemeColor(themeMode, BasicDetailsText).name();
+        QString cardBg = ElaThemeColor(themeMode, BasicBase).name();
+        QString cardBorder = ElaThemeColor(themeMode, BasicBorder).name();
+        QString dialogBg = ElaThemeColor(themeMode, DialogBase).name();
+        QString badgeBg = ElaThemeColor(themeMode, BasicHover).name();
+
+        aboutDialog->setStyleSheet(QString("QDialog { background-color: %1; }").arg(dialogBg));
+
+        QVBoxLayout *layout = new QVBoxLayout;
+        layout->setSpacing(12);
+        layout->setContentsMargins(24, 24, 24, 24);
+        aboutDialog->setLayout(layout);
+
+        // App icon
+        QLabel *iconLabel = new QLabel;
+        QIcon appIcon = qApp->windowIcon();
+        if (!appIcon.isNull()) {
+            iconLabel->setPixmap(appIcon.pixmap(64, 64));
+        }
+        iconLabel->setAlignment(Qt::AlignCenter);
+        layout->addWidget(iconLabel);
+
+        // Title
+        QLabel *titleLabel = new QLabel(
+            QString("<h2 style='color: %1; margin: 0;'>NeurolingsCE</h2>").arg(primaryColor));
+        titleLabel->setAlignment(Qt::AlignCenter);
+        layout->addWidget(titleLabel);
+
+        // Version badge
+        QLabel *versionLabel = new QLabel(
+            QString("<span style='background-color: %1; color: %2; "
+                "padding: 3px 12px; border-radius: 10px; font-size: 12px;'>v%3</span>")
+            .arg(badgeBg, primaryColor, version));
+        versionLabel->setAlignment(Qt::AlignCenter);
+        layout->addWidget(versionLabel);
+
+        // Description
+        QLabel *descLabel = new QLabel(
+            tr("A cross-platform shimeji desktop pet runner."));
+        descLabel->setAlignment(Qt::AlignCenter);
+        descLabel->setStyleSheet(QString("color: %1; margin: 4px 0;").arg(detailsColor));
+        layout->addWidget(descLabel);
+
+        // Info card
+        QString infoHtml = QStringLiteral(
+            "<table cellpadding='4' style='color: %1;'>"
+            "<tr><td style='color: %2; font-weight: bold;'>%3</td>"
+            "<td><a href='https://space.bilibili.com/178381315' "
+            "style='color: %2; text-decoration: none;'>%4</a></td></tr>"
+            "<tr><td style='color: %2; font-weight: bold;'>%5</td>"
+            "<td><a href='https://github.com/pixelomer/Shijima-Qt' "
+            "style='color: %2; text-decoration: none;'>Shijima-Qt</a> by pixelomer</td></tr>"
+            "<tr><td style='color: %2; font-weight: bold;'>%6</td>"
+            "<td><a href='https://github.com/qingchenyouforcc/NeurolingsCE' "
+            "style='color: %2; text-decoration: none;'>GitHub</a></td></tr>"
+            "<tr><td style='color: %2; font-weight: bold;'>%7</td>"
+            "<td>423902950</td></tr>"
+            "<tr><td style='color: %2; font-weight: bold;'>%8</td>"
+            "<td>125081756</td></tr>"
+            "</table>")
+            .arg(textColor, primaryColor,
+                 tr("Author"), authorName,
+                 tr("Based on"),
+                 tr("Project"),
+                 tr("Feedback QQ"),
+                 tr("Chat QQ"));
+        QLabel *infoLabel = new QLabel(infoHtml);
+        infoLabel->setOpenExternalLinks(true);
+        infoLabel->setAlignment(Qt::AlignCenter);
+        infoLabel->setStyleSheet(QString("background-color: %1; border: 1px solid %2; "
+            "border-radius: 8px; padding: 12px;").arg(cardBg, cardBorder));
+        layout->addWidget(infoLabel);
+
+        // Button stylesheet for theme consistency
+        QString buttonStyle = QString(
+            "QPushButton { background-color: %1; color: %2; border: 1px solid %3; "
+            "border-radius: 6px; padding: 6px 16px; font-size: 13px; }"
+            "QPushButton:hover { background-color: %4; }"
+            "QPushButton:pressed { background-color: %5; }"
+        ).arg(cardBg, textColor, cardBorder,
+             ElaThemeColor(themeMode, BasicHover).name(),
+             ElaThemeColor(themeMode, BasicPress).name());
+
+        // View Licenses button
+        QPushButton *licensesButton = new QPushButton(tr("View Licenses"));
+        licensesButton->setStyleSheet(buttonStyle);
+        connect(licensesButton, &QPushButton::clicked, [this](){
             ShijimaLicensesDialog dialog { this };
             dialog.exec();
         });
+        layout->addWidget(licensesButton);
 
-        action = menu->addAction(tr("Visit Shijima Homepage"));
-        connect(action, &QAction::triggered, [](){
+        // Links row
+        QHBoxLayout *linksRow = new QHBoxLayout;
+        linksRow->addStretch();
+        auto *btnWeb = new QPushButton(tr("Website"));
+        btnWeb->setStyleSheet(buttonStyle);
+        connect(btnWeb, &QPushButton::clicked, [](){
             QDesktopServices::openUrl(QUrl { "https://getshijima.app" });
         });
-
-        action = menu->addAction(tr("Report Issue"));
-        connect(action, &QAction::triggered, [](){
+        linksRow->addWidget(btnWeb);
+        auto *btnBug = new QPushButton(tr("Report Issue"));
+        btnBug->setStyleSheet(buttonStyle);
+        connect(btnBug, &QPushButton::clicked, [](){
             QDesktopServices::openUrl(QUrl { "https://github.com/qingchenyouforcc/NeurolingsCE/issues" });
         });
+        linksRow->addWidget(btnBug);
+        linksRow->addStretch();
+        layout->addLayout(linksRow);
 
-        action = menu->addAction(tr("About"));
-        connect(action, &QAction::triggered, [this](){
-            QString version = QStringLiteral(NEUROLINGSCE_VERSION);
-            QString authorName = QString::fromUtf8("\xe8\xbd\xbb\xe5\xb0\x98\xe5\x91\xa6");
+        // Close button
+        QHBoxLayout *buttonRow = new QHBoxLayout;
+        buttonRow->addStretch();
+        QPushButton *closeButton = new QPushButton(tr("Close"));
+        closeButton->setStyleSheet(buttonStyle);
+        closeButton->setMinimumWidth(100);
+        connect(closeButton, &QPushButton::clicked, aboutDialog, &QDialog::accept);
+        buttonRow->addWidget(closeButton);
+        buttonRow->addStretch();
+        layout->addLayout(buttonRow);
 
-            QDialog *aboutDialog = new QDialog(this);
-            aboutDialog->setWindowTitle(tr("About NeurolingsCE"));
-            aboutDialog->setFixedWidth(420);
-            aboutDialog->setAttribute(Qt::WA_DeleteOnClose);
-
-            QVBoxLayout *layout = new QVBoxLayout;
-            layout->setSpacing(12);
-            layout->setContentsMargins(24, 24, 24, 24);
-            aboutDialog->setLayout(layout);
-
-            // App icon
-            QLabel *iconLabel = new QLabel;
-            QIcon appIcon = qApp->windowIcon();
-            if (!appIcon.isNull()) {
-                iconLabel->setPixmap(appIcon.pixmap(64, 64));
-            }
-            iconLabel->setAlignment(Qt::AlignCenter);
-            layout->addWidget(iconLabel);
-
-            // Title
-            QLabel *titleLabel = new QLabel(
-                QStringLiteral("<h2 style='color: #303f9f; margin: 0;'>NeurolingsCE</h2>"));
-            titleLabel->setAlignment(Qt::AlignCenter);
-            layout->addWidget(titleLabel);
-
-            // Version badge
-            QLabel *versionLabel = new QLabel(
-                QString("<span style='background-color: #e8eaf6; color: #5c6bc0; "
-                    "padding: 3px 12px; border-radius: 10px; font-size: 12px;'>v%1</span>")
-                .arg(version));
-            versionLabel->setAlignment(Qt::AlignCenter);
-            layout->addWidget(versionLabel);
-
-            // Description
-            QLabel *descLabel = new QLabel(
-                tr("A cross-platform shimeji desktop pet runner."));
-            descLabel->setAlignment(Qt::AlignCenter);
-            descLabel->setStyleSheet("color: #6c757d; margin: 4px 0;");
-            layout->addWidget(descLabel);
-
-            // Info card
-            QString infoHtml = QStringLiteral(
-                "<table cellpadding='4' style='color: #3c4043;'>"
-                "<tr><td style='color: #5c6bc0; font-weight: bold;'>%1</td>"
-                "<td><a href='https://space.bilibili.com/178381315' "
-                "style='color: #5c6bc0; text-decoration: none;'>%2</a></td></tr>"
-                "<tr><td style='color: #5c6bc0; font-weight: bold;'>%3</td>"
-                "<td><a href='https://github.com/pixelomer/Shijima-Qt' "
-                "style='color: #5c6bc0; text-decoration: none;'>Shijima-Qt</a> by pixelomer</td></tr>"
-                "<tr><td style='color: #5c6bc0; font-weight: bold;'>%4</td>"
-                "<td><a href='https://github.com/qingchenyouforcc/NeurolingsCE' "
-                "style='color: #5c6bc0; text-decoration: none;'>GitHub</a></td></tr>"
-                "<tr><td style='color: #5c6bc0; font-weight: bold;'>%5</td>"
-                "<td>423902950</td></tr>"
-                "<tr><td style='color: #5c6bc0; font-weight: bold;'>%6</td>"
-                "<td>125081756</td></tr>"
-                "</table>")
-                .arg(tr("Author"), authorName,
-                     tr("Based on"),
-                     tr("Project"),
-                     tr("Feedback QQ"),
-                     tr("Chat QQ"));
-            QLabel *infoLabel = new QLabel(infoHtml);
-            infoLabel->setOpenExternalLinks(true);
-            infoLabel->setAlignment(Qt::AlignCenter);
-            infoLabel->setStyleSheet("background-color: #ffffff; border: 1px solid #e0e3eb; "
-                "border-radius: 8px; padding: 12px;");
-            layout->addWidget(infoLabel);
-
-            // Close button
-            QHBoxLayout *buttonRow = new QHBoxLayout;
-            buttonRow->addStretch();
-            QPushButton *closeButton = new QPushButton(tr("Close"));
-            closeButton->setMinimumWidth(100);
-            connect(closeButton, &QPushButton::clicked, aboutDialog, &QDialog::accept);
-            buttonRow->addWidget(closeButton);
-            buttonRow->addStretch();
-            layout->addLayout(buttonRow);
-
-            aboutDialog->exec();
-        });
-    }
+        aboutDialog->exec();
+    });
 }
 
 void ShijimaManager::refreshListWidget() {
@@ -1059,6 +1082,7 @@ ShijimaManager::ShijimaManager(QWidget *parent):
     PlatformWidget(parent, PlatformWidget::ShowOnAllDesktops),
     m_sandboxWidget(nullptr),
     m_settings("pixelomer", "Shijima-Qt"),
+    m_windowedModeAction(nullptr),
     m_idCounter(0), m_httpApi(this),
     m_hasTickCallbacks(false),
     m_translator(nullptr),
@@ -1102,21 +1126,95 @@ ShijimaManager::ShijimaManager(QWidget *parent):
     if (m_windowObserver.tickFrequency() > 0) {
         m_windowObserverTimer = startTimer(m_windowObserver.tickFrequency());
     }
-    setWindowFlags((windowFlags() | Qt::CustomizeWindowHint | Qt::MaximizeUsingFullscreenGeometryHint |
-        Qt::WindowMinimizeButtonHint) & ~Qt::WindowMaximizeButtonHint);
-    setManagerVisible(true);
+    // ElaWindow setup
+    setUserInfoCardVisible(false);
+    setWindowButtonFlag(ElaAppBarType::StayTopButtonHint, false);
+    setWindowButtonFlag(ElaAppBarType::MaximizeButtonHint, false);
+    setIsDefaultClosed(false);
+    connect(this, &ElaWindow::closeButtonClicked, this, [this]() {
+        #if defined(_WIN32)
+        if (m_mascots.size() == 0) {
+            askClose();
+        } else {
+            setManagerVisible(false);
+        }
+        #else
+        askClose();
+        #endif
+    });
+
+    // Sync theme with system color scheme
+    auto syncTheme = [](Qt::ColorScheme scheme) {
+        eTheme->setThemeMode(scheme == Qt::ColorScheme::Dark
+            ? ElaThemeType::Dark : ElaThemeType::Light);
+    };
+    syncTheme(QGuiApplication::styleHints()->colorScheme());
+    connect(QGuiApplication::styleHints(), &QStyleHints::colorSchemeChanged,
+            this, syncTheme);
 
     connect(&m_listWidget, &QListWidget::itemDoubleClicked,
         this, &ShijimaManager::itemDoubleClicked);
     m_listWidget.setIconSize({ 64, 64 });
     m_listWidget.installEventFilter(this);
     m_listWidget.setSelectionMode(QListWidget::ExtendedSelection);
-    setCentralWidget(&m_listWidget);
+
+    // Apply theme-aware styling to QListWidget
+    auto applyListTheme = [this]() {
+        auto mode = eTheme->getThemeMode();
+        QColor bg = eTheme->getThemeColor(mode, ElaThemeType::WindowBase);
+        QColor text = eTheme->getThemeColor(mode, ElaThemeType::BasicText);
+        QColor bgAlt = eTheme->getThemeColor(mode, ElaThemeType::BasicBase);
+        QColor hover = eTheme->getThemeColor(mode, ElaThemeType::BasicHover);
+        QColor selected = eTheme->getThemeColor(mode, ElaThemeType::PrimaryNormal);
+        QColor border = eTheme->getThemeColor(mode, ElaThemeType::BasicBorder);
+        m_listWidget.setStyleSheet(QString(
+            "QListWidget {"
+            "  background-color: %1;"
+            "  color: %2;"
+            "  border: 1px solid %3;"
+            "  border-radius: 6px;"
+            "  outline: none;"
+            "}"
+            "QListWidget::item {"
+            "  padding: 4px;"
+            "  border-radius: 4px;"
+            "}"
+            "QListWidget::item:hover {"
+            "  background-color: %4;"
+            "}"
+            "QListWidget::item:selected {"
+            "  background-color: %5;"
+            "  color: white;"
+            "}"
+            "QScrollBar:vertical {"
+            "  background: %6;"
+            "  width: 8px;"
+            "  border-radius: 4px;"
+            "}"
+            "QScrollBar::handle:vertical {"
+            "  background: %7;"
+            "  min-height: 30px;"
+            "  border-radius: 4px;"
+            "}"
+            "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {"
+            "  height: 0px;"
+            "}"
+        ).arg(bg.name(), text.name(), border.name(),
+              hover.name(), selected.name(), bgAlt.name(),
+              border.name()));
+    };
+    applyListTheme();
+    connect(eTheme, &ElaTheme::themeModeChanged, this, [applyListTheme]() {
+        applyListTheme();
+    });
+
 
     // Window title and status bar
-    setWindowTitle(tr("NeurolingsCE — Mascot Manager"));
+    setWindowTitle(tr("NeurolingsCE \u2014 Mascot Manager"));
+    auto *elaStatusBar = new ElaStatusBar(this);
+    setStatusBar(elaStatusBar);
     m_statusLabel = new QLabel(this);
-    statusBar()->addWidget(m_statusLabel, 1);
+    elaStatusBar->addWidget(m_statusLabel, 1);
     updateStatusBar();
 
     // Load saved language before building UI
@@ -1130,7 +1228,8 @@ ShijimaManager::ShijimaManager(QWidget *parent):
     m_detachThreshold = m_settings.value("detachThreshold",
         QVariant::fromValue(30.0)).toDouble();
 
-    buildToolbar();
+    setupNavigation();
+    setManagerVisible(true);
     m_constructing = false;
 
     setupTrayIconFor(this);
@@ -1157,6 +1256,16 @@ void ShijimaManager::closeEvent(QCloseEvent *event) {
         askClose();
         #endif
         return;
+    }
+    // Stop HTTP server and timers early to avoid blocking on destruction
+    m_httpApi.stop();
+    if (m_mascotTimer != 0) {
+        killTimer(m_mascotTimer);
+        m_mascotTimer = 0;
+    }
+    if (m_windowObserverTimer != 0) {
+        killTimer(m_windowObserverTimer);
+        m_windowObserverTimer = 0;
     }
     event->accept();
     #else
@@ -1293,46 +1402,30 @@ void ShijimaManager::askClose() {
         QCoreApplication::quit();
         #else
         m_allowClose = true;
-        close();
+        closeWindow();
         #endif
     }
 }
 
 void ShijimaManager::setManagerVisible(bool visible) {
-    #if !defined(__APPLE__)
-    auto screen = QGuiApplication::primaryScreen();
-    auto geometry = screen->geometry();
     if (!m_wasVisible && visible) {
+        show();
         if (window() != nullptr) {
             window()->activateWindow();
         }
-        setMinimumSize(480, 320);
-        setMaximumSize(999999, 999999);
-        move(geometry.width() / 2 - 240, geometry.height() / 2 - 160);
         m_wasVisible = true;
     }
     else if (m_wasVisible && !visible) {
-        setFixedSize(1, 1);
-        move(geometry.width() * 10, geometry.height() * 10);
-        clearFocus();
-        if (window() != nullptr) {
-            window()->activateWindow();
+        #if defined(__APPLE__)
+        if (m_mascots.size() == 0) {
+            askClose();
+            return;
         }
-        m_wasVisible = false;
-    }
-    #else
-    if (visible) {
-        show();
-        m_wasVisible = true;
-    }
-    else if (m_mascots.size() == 0) {
-        askClose();
-    }
-    else {
+        #endif
         hide();
+        clearFocus();
         m_wasVisible = false;
     }
-    #endif
 }
 
 bool ShijimaManager::windowedMode() {
@@ -1557,7 +1650,7 @@ bool ShijimaManager::eventFilter(QObject *obj, QEvent *event) {
             return true;
         }
     }
-    return QMainWindow::eventFilter(obj, event);
+    return ElaWindow::eventFilter(obj, event);
 }
 
 void ShijimaManager::spawnClicked() {
@@ -1603,9 +1696,13 @@ void ShijimaManager::switchLanguage(const QString &langCode) {
 }
 
 void ShijimaManager::retranslateUi() {
-    menuBar()->clear();
-    buildToolbar();
+    setWindowTitle(tr("NeurolingsCE \u2014 Mascot Manager"));
+    updateStatusBar();
     rebuildTrayMenuFor(this);
+    // Note: ElaWindow navigation node labels (Home, Settings, About) are set at
+    // creation time via addPageNode/addFooterNode and cannot be updated in-place.
+    // A full navigation rebuild would require destroying and recreating all pages
+    // and their signal connections. For now, navigation labels update on next restart.
 }
 
 void ShijimaManager::changeEvent(QEvent *event) {
@@ -1614,3 +1711,6 @@ void ShijimaManager::changeEvent(QEvent *event) {
     }
     PlatformWidget::changeEvent(event);
 }
+
+
+#include "ShijimaManager.moc"

@@ -27,6 +27,7 @@
 #include "shijima-qt/AssetLoader.hpp"
 #include "shijima-qt/cli.hpp"
 #include <httplib.h>
+#include "ElaApplication.h"
 #include <QFile>
 
 int main(int argc, char **argv) {
@@ -38,6 +39,7 @@ int main(int argc, char **argv) {
         shijima::set_log_level(SHIJIMA_LOG_PARSER | SHIJIMA_LOG_WARNINGS);
     #endif
     QApplication app(argc, argv);
+    eApp->init();
     app.setApplicationName("NeurolingsCE");
     app.setApplicationDisplayName("NeurolingsCE[Shijima-Qt Edition]");
     {
@@ -49,14 +51,15 @@ int main(int argc, char **argv) {
             app.setWindowIcon(appIcon);
         }
     }
-    // Load global stylesheet
-    {
-        QFile styleFile(QStringLiteral(":/style.qss"));
-        if (styleFile.open(QFile::ReadOnly | QFile::Text)) {
-            app.setStyleSheet(QString::fromUtf8(styleFile.readAll()));
-            styleFile.close();
-        }
-    }
+    // Global stylesheet disabled — ElaWidgetTools provides its own theme system.
+    // The old style.qss would conflict with ElaTheme's dynamic theming.
+    // {
+    //     QFile styleFile(QStringLiteral(":/style.qss"));
+    //     if (styleFile.open(QFile::ReadOnly | QFile::Text)) {
+    //         app.setStyleSheet(QString::fromUtf8(styleFile.readAll()));
+    //         styleFile.close();
+    //     }
+    // }
     try {
         httplib::Client pingClient { "http://127.0.0.1:32456" };
         pingClient.set_connection_timeout(0, 500000);

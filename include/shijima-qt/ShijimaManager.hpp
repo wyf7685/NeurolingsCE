@@ -18,7 +18,6 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // 
 
-#include <QMainWindow>
 #include <QString>
 #include <shijima/mascot/manager.hpp>
 #include <shijima/mascot/factory.hpp>
@@ -39,12 +38,15 @@
 #include <condition_variable>
 #include <QTranslator>
 #include <QStatusBar>
+#include <functional>
+#include <QPushButton>
+#include "ElaWindow.h"
 
 class QVBoxLayout;
 class QWidget;
 class QLabel;
 
-class ShijimaManager : public PlatformWidget<QMainWindow>
+class ShijimaManager : public PlatformWidget<ElaWindow>
 {
     Q_OBJECT
 public:
@@ -89,7 +91,7 @@ private:
     void reloadMascots(std::set<std::string> const& mascots);
     void loadAllMascots();
     void refreshListWidget();
-    void buildToolbar();
+    void setupNavigation();
     void importAction();
     void deleteAction();
     void updateSandboxBackground();
@@ -140,6 +142,9 @@ private:
     QTranslator *m_qtTranslator;
     QString m_currentLanguage;
     QLabel *m_statusLabel = nullptr;
-    // Window-speed detachment settings
+    QWidget *m_homePage = nullptr;
+    QWidget *m_settingsPage = nullptr;
+    QString m_settingsKey;
+    QString m_aboutKey;
     double m_detachThreshold = 30.0;  // pixels per tick speed threshold for detachment
 };
