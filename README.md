@@ -21,6 +21,8 @@
 
 ## 下载
 
+Neurolings Core是该项目的发行版，Neurolings是该项目的懒人包
+
 - [最新版本](https://github.com/qingchenyouforcc/NeurolingsCE/releases/latest)
 - [所有版本](https://github.com/qingchenyouforcc/NeurolingsCE/releases)
 
@@ -122,6 +124,8 @@ NeurolingsCE/
 ## 致谢
 
 本项目基于 [pixelomer](https://github.com/pixelomer) 的 [Shijima-Qt](https://github.com/pixelomer/Shijima-Qt) 开发，在此基础上进行了大量修改和功能增强。
+
+本项目最早是为 "[Neurolings](https://x.com/Monikaphobia/status/1844272129619132682?s=20)" 而做的迁移版本，现在转为通用Shimeji桌宠核心/管理器程序
 
 核心依赖：
 - [libshijima](https://github.com/pixelomer/libshijima) — 看板娘模拟引擎
