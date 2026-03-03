@@ -63,7 +63,7 @@ else
 CXXFLAGS += -DSHIJIMA_USE_QTMULTIMEDIA=0
 endif
 
-CXXFLAGS += -Iinclude -Isrc/platform -Ilibshijima -Ilibshimejifinder -Icpp-httplib -DNEUROLINGSCE_VERSION='"0.1.0"'
+CXXFLAGS += -Iinclude -Isrc/platform -Ilibshijima -Ilibshimejifinder -Icpp-httplib -IElaWidgetTools/ElaWidgetTools -DNEUROLINGSCE_VERSION='"0.1.0"'
 PKG_LIBS += libarchive
 PUBLISH_DLL = $(addprefix Qt6,$(QT_LIBS))
 
@@ -146,7 +146,7 @@ appimage: publish/Linux/$(CONFIG)/NeurolingsCE.AppImage
 macapp: publish/macOS/$(CONFIG)/NeurolingsCE.app
 
 shijima-qt$(EXE): src/platform/Platform/Platform.a libshimejifinder/build/libshimejifinder.a \
-	libshijima/build/libshijima.a shijima-qt.a
+	libshijima/build/libshijima.a ElaWidgetTools/build/ElaWidgetTools/libElaWidgetTools.a shijima-qt.a
 	$(CXX) -o $@ $(LD_COPY_NEEDED) $(LD_WHOLE_ARCHIVE) $^ $(LD_NO_WHOLE_ARCHIVE) \
 		$(TARGET_LDFLAGS) $(LDFLAGS)
 	if [ $(CONFIG) = "release" ]; then $(STRIP) $@; fi
@@ -193,8 +193,14 @@ libshimejifinder/build/libshimejifinder.a: libshimejifinder/build/Makefile
 	if [ $(PLATFORM) = "Windows" ]; then cp libshimejifinder/build/unarr/libunarr.so.1.1.0 \
 		libshimejifinder/build/unarr/libunarr.dll; fi
 
+ElaWidgetTools/build/Makefile: ElaWidgetTools/ElaWidgetTools/CMakeLists.txt FORCE
+	mkdir -p ElaWidgetTools/build && cd ElaWidgetTools/build && $(CMAKE) $(CMAKEFLAGS) -DELAWIDGETTOOLS_BUILD_STATIC_LIB=ON ../ElaWidgetTools
+
+ElaWidgetTools/build/ElaWidgetTools/libElaWidgetTools.a: ElaWidgetTools/build/Makefile
+	$(MAKE) -C ElaWidgetTools/build
+
 clean::
-	rm -rf publish/$(PLATFORM)/$(CONFIG) libshijima/build libshimejifinder/build
+    rm -rf publish/$(PLATFORM)/$(CONFIG) libshijima/build libshimejifinder/build ElaWidgetTools/build
 	rm -f $(OBJECTS) shijima-qt.a shijima-qt$(EXE) NeurolingsCE.AppImage qrc_resources.cc qrc_i18n.cc $(QM_FILES)
 	$(MAKE) -C src/platform/Platform clean
 
