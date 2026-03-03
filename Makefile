@@ -63,7 +63,7 @@ else
 CXXFLAGS += -DSHIJIMA_USE_QTMULTIMEDIA=0
 endif
 
-CXXFLAGS += -Iinclude -Ilibshijima -Ilibshimejifinder -Icpp-httplib -DNEUROLINGSCE_VERSION='"0.1.0"'
+CXXFLAGS += -Iinclude -Isrc/platform -Ilibshijima -Ilibshimejifinder -Icpp-httplib -DNEUROLINGSCE_VERSION='"0.1.0"'
 PKG_LIBS += libarchive
 PUBLISH_DLL = $(addprefix Qt6,$(QT_LIBS))
 
