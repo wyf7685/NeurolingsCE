@@ -34,6 +34,7 @@
 #include "shijima-qt/AssetLoader.hpp"
 #include "shijima-qt/ShijimaContextMenu.hpp"
 #include "shijima-qt/ShijimaManager.hpp"
+#include "shijima-qt/SpeechBubbleWidget.hpp"
 #if SHIJIMA_WITH_SHIMEJIFINDER
 #include <shimejifinder/utils.hpp>
 #endif
@@ -61,6 +62,12 @@ ShijimaWidget::ShijimaWidget(MascotData *mascotData,
     if (dir.exists() && dir.cdUp() && dir.cd("sound")) {
         m_sounds.searchPaths.push_back(dir.path());
     }
+    
+    // Speech bubble click reset timer
+    m_clickResetTimer.setSingleShot(true);
+    connect(&m_clickResetTimer, &QTimer::timeout, [this]() {
+        m_clickCount = 0;
+    });
     
     if (!m_windowedMode) {
         setAttribute(Qt::WA_TranslucentBackground);
@@ -301,6 +308,12 @@ void ShijimaWidget::tick() {
     if (m_inspector != nullptr && m_inspector->isVisible()) {
         m_inspector->tick();
     }
+
+    // Update speech bubble position
+    if (m_speechBubble != nullptr && m_speechBubble->isActive()) {
+        QPoint anchorPos = mapToGlobal(QPoint(width() / 2, 0));
+        m_speechBubble->updatePosition(anchorPos);
+    }
 }
 
 void ShijimaWidget::contextMenuClosed(QCloseEvent *event) {
@@ -315,6 +328,11 @@ void ShijimaWidget::showContextMenu(QPoint const& pos) {
 }
 
 ShijimaWidget::~ShijimaWidget() {
+    if (m_speechBubble != nullptr) {
+        m_speechBubble->hideBubble();
+        delete m_speechBubble;
+        m_speechBubble = nullptr;
+    }
     if (m_dragTargetPt != nullptr) {
         *m_dragTargetPt = nullptr;
         m_dragTargetPt = nullptr;
@@ -367,6 +385,9 @@ void ShijimaWidget::mousePressEvent(QMouseEvent *event) {
     }
     if (event->button() == Qt::MouseButton::LeftButton) {
         m_dragTarget->m_mascot->state->dragging = true;
+        // Record press info for click detection
+        m_lastPressGlobalPos = mapToGlobal(pos);
+        m_pressElapsedTimer.start();
     }
     else if (event->button() == Qt::MouseButton::RightButton) {
         auto screenPos = mapToGlobal(pos);
@@ -384,7 +405,53 @@ void ShijimaWidget::mouseReleaseEvent(QMouseEvent *event) {
         return;
     }
     if (event->button() == Qt::MouseButton::LeftButton) {
+        // Detect click vs drag: small movement + short duration
+        auto releaseGlobalPos = mapToGlobal(event->pos());
+        int distance = (releaseGlobalPos - m_lastPressGlobalPos).manhattanLength();
+        qint64 elapsed = m_pressElapsedTimer.elapsed();
+        ShijimaWidget *clickTarget = m_dragTarget;
+
         m_dragTarget->m_mascot->state->dragging = false;
         setDragTarget(nullptr);
+
+        // Click threshold: less than 6px movement and less than 400ms
+        if (distance <= 6 && elapsed <= 400) {
+            clickTarget->handleClick();
+        }
     }
+}
+
+void ShijimaWidget::handleClick() {
+    m_clickCount++;
+    m_clickResetTimer.start(500); // Reset click count after 500ms of no clicks
+
+    // Trigger speech bubble when click count reaches threshold
+    QSettings bubbleSettings("pixelomer", "Shijima-Qt");
+    int threshold = bubbleSettings.value("speechBubbleClickCount", 1).toInt();
+    if (m_clickCount == threshold) {
+        showSpeechBubble();
+    }
+}
+
+void ShijimaWidget::showSpeechBubble() {
+    // Check if speech bubbles are enabled in settings
+    QSettings settings("pixelomer", "Shijima-Qt");
+    bool enabled = settings.value("speechBubbleEnabled",
+        QVariant::fromValue(true)).toBool();
+    if (!enabled) {
+        return;
+    }
+
+    // Get random text
+    QString text = SpeechBubbleWidget::randomBubbleText(m_data->path());
+
+    // Create bubble widget if needed
+    if (m_speechBubble == nullptr) {
+        m_speechBubble = new SpeechBubbleWidget();
+    }
+
+    // Calculate anchor position (top-center of the mascot widget in screen coords)
+    QPoint anchorPos = mapToGlobal(QPoint(width() / 2, 0));
+
+    m_speechBubble->showBubble(text, anchorPos);
 }

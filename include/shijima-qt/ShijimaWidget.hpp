@@ -21,6 +21,8 @@
 #include <QWidget>
 #include <memory>
 #include <QRegion>
+#include <QElapsedTimer>
+#include <QTimer>
 #include "shijima-qt/Asset.hpp"
 #include "shijima-qt/SoundEffectManager.hpp"
 #include <shijima/mascot/manager.hpp>
@@ -33,6 +35,7 @@ class QPaintEvent;
 class QMouseEvent;
 class QCloseEvent;
 class ShijimaContextMenu;
+class SpeechBubbleWidget;
 class ShimejiInspectorDialog;
 
 class ShijimaWidget : public PlatformWidget<QWidget>
@@ -80,6 +83,8 @@ private:
     void contextMenuClosed(QCloseEvent *);
     void showContextMenu(QPoint const&);
     bool updateOffsets();
+    void showSpeechBubble();
+    void handleClick();
 #ifdef __linux__
     QRegion m_windowMask;
 #endif
@@ -107,4 +112,10 @@ private:
     bool m_fallTracking = false;
     double m_fallStartY = 0.0;
     bool m_fallThroughMode = false;
+    // Speech bubble click tracking
+    SpeechBubbleWidget *m_speechBubble = nullptr;
+    QPoint m_lastPressGlobalPos;
+    QElapsedTimer m_pressElapsedTimer;
+    QTimer m_clickResetTimer;
+    int m_clickCount = 0;
 };

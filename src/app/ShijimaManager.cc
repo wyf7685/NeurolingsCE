@@ -509,6 +509,49 @@ void ShijimaManager::setupNavigation() {
         settingsLayout->addWidget(area);
     }
 
+    // --- Speech Bubble ---
+    {
+        static const QString key = "speechBubbleEnabled";
+        bool initial = m_settings.value(key, QVariant::fromValue(true)).toBool();
+
+        auto *area = new ElaScrollPageArea(m_settingsPage);
+        auto *row = new QHBoxLayout(area);
+        auto *label = new ElaText(tr("Speech Bubble"), m_settingsPage);
+        label->setWordWrap(false);
+        label->setTextPixelSize(15);
+        row->addWidget(label);
+        row->addStretch();
+        auto *toggle = new ElaToggleSwitch(m_settingsPage);
+        toggle->setIsToggled(initial);
+        connect(toggle, &ElaToggleSwitch::toggled, [this](bool checked){
+            m_settings.setValue("speechBubbleEnabled", QVariant::fromValue(checked));
+        });
+        row->addWidget(toggle);
+        settingsLayout->addWidget(area);
+    }
+
+    // --- Speech Bubble Click Count ---
+    {
+        static const QString key = "speechBubbleClickCount";
+        int initial = m_settings.value(key, 1).toInt();
+
+        auto *area = new ElaScrollPageArea(m_settingsPage);
+        auto *row = new QHBoxLayout(area);
+        auto *label = new ElaText(tr("Speech Bubble Click Count"), m_settingsPage);
+        label->setWordWrap(false);
+        label->setTextPixelSize(15);
+        row->addWidget(label);
+        row->addStretch();
+        auto *spinBox = new QSpinBox(m_settingsPage);
+        spinBox->setRange(1, 10);
+        spinBox->setValue(initial);
+        connect(spinBox, QOverload<int>::of(&QSpinBox::valueChanged), [this](int val){
+            m_settings.setValue("speechBubbleClickCount", val);
+        });
+        row->addWidget(spinBox);
+        settingsLayout->addWidget(area);
+    }
+
     // --- Windowed Mode ---
     {
         auto *area = new ElaScrollPageArea(m_settingsPage);
@@ -1009,11 +1052,27 @@ ShijimaManager::~ShijimaManager() {
         this, &ShijimaManager::screenRemoved);
 }
 
-void ShijimaManager::onTickSync(std::function<void(ShijimaManager *)> callback) {
+void ShijimaManager::abortPendingCallbacks() {
     auto lock = acquireLock();
+    m_shuttingDown.store(true);
+    m_tickCallbacks.clear();
+    m_hasTickCallbacks = false;
+    m_tickCallbackCompletion.notify_all();
+}
+
+void ShijimaManager::onTickSync(std::function<void(ShijimaManager *)> callback) {
+    if (m_shuttingDown.load()) {
+        return;
+    }
+    auto lock = acquireLock();
+    if (m_shuttingDown.load()) {
+        return;
+    }
     m_hasTickCallbacks = true;
     m_tickCallbacks.push_back(callback);
-    m_tickCallbackCompletion.wait(lock);
+    m_tickCallbackCompletion.wait(lock, [this]{
+        return m_shuttingDown.load() || m_tickCallbacks.empty();
+    });
 }
 
 void ShijimaManager::setWindowedMode(bool windowedMode) {
@@ -1258,7 +1317,11 @@ void ShijimaManager::closeEvent(QCloseEvent *event) {
         #endif
         return;
     }
-    // Stop HTTP server and timers early to avoid blocking on destruction
+    // Abort any pending onTickSync callbacks to prevent deadlock:
+    // Server thread may be blocked in onTickSync waiting for tick() to
+    // notify, but we're about to join that thread from this GUI thread.
+    // Wake them up first so the server thread can exit cleanly.
+    abortPendingCallbacks();
     m_httpApi.stop();
     if (m_mascotTimer != 0) {
         killTimer(m_mascotTimer);

@@ -18,6 +18,7 @@ SOURCES = src/app/main.cc \
 	DefaultMascot.cc \
 	src/app/ShijimaHttpApi.cc \
 	src/app/cli.cc \
+	src/app/SpeechBubbleWidget.cc \
 	src/resources/resources.rc \
 	qrc_resources.cc \
 	qrc_i18n.cc

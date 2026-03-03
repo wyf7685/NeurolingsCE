@@ -32,6 +32,7 @@
 #include <set>
 #include <list>
 #include <mutex>
+#include <atomic>
 #include "Platform/ActiveWindowObserver.hpp"
 #include "shijima-qt/ShijimaWidget.hpp"
 #include "shijima-qt/ShijimaHttpApi.hpp"
@@ -82,6 +83,7 @@ private:
     explicit ShijimaManager(QWidget *parent = nullptr);
     static std::string imgRootForTemplatePath(std::string const& path);
     std::unique_lock<std::mutex> acquireLock();
+    void abortPendingCallbacks();
     void loadDefaultMascot();
     void loadData(MascotData *data);
     void spawnClicked();
@@ -135,6 +137,7 @@ private:
     QListWidget m_listWidget;
     ShijimaHttpApi m_httpApi;
     bool m_hasTickCallbacks;
+    std::atomic<bool> m_shuttingDown{false};
     std::mutex m_mutex;
     std::condition_variable m_tickCallbackCompletion;
     std::list<std::function<void(ShijimaManager *)>> m_tickCallbacks;
