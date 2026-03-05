@@ -151,7 +151,3 @@ jobs:
           name: release-macos-arm64
           path: publish/macOS/release
           retention-days: 1
-      - name: Temporarily let gtar run as root
-        run: |
-          sudo chown 0:0 /opt/homebrew/bin/gtar
-          sudo chmod u+s /opt/homebrew/bin/gtar

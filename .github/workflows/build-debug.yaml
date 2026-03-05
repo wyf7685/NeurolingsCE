@@ -149,7 +149,3 @@ jobs:
           name: debug-macos-arm64
           path: publish/macOS/debug/shijima-qt
           retention-days: 1
-      - name: Temporarily let gtar run as root
-        run: |
-          sudo chown 0:0 /opt/homebrew/bin/gtar
-          sudo chmod u+s /opt/homebrew/bin/gtar
