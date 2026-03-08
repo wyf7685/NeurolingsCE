@@ -12,6 +12,7 @@ jobs:
     name: Build on ${{ matrix.platform.host }}
     runs-on: ${{ matrix.platform.runner }}
     strategy:
+      fail-fast: false
       matrix:
         platform:
           - runner: ubuntu-22.04
