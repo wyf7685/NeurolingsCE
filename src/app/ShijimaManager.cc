@@ -1191,6 +1191,7 @@ ShijimaManager::ShijimaManager(QWidget *parent):
     setWindowButtonFlag(ElaAppBarType::StayTopButtonHint, false);
     setWindowButtonFlag(ElaAppBarType::MaximizeButtonHint, false);
     setIsDefaultClosed(false);
+    setMinimumHeight(450);  // Allow smaller window height
     connect(this, &ElaWindow::closeButtonClicked, this, [this]() {
         #if defined(_WIN32)
         if (m_mascots.size() == 0) {
