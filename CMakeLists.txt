@@ -1,6 +1,12 @@
+# Read version from VERSION.txt file
+file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/VERSION.txt" VERSION_LINES REGEX "^VERSION=.*")
+string(REGEX REPLACE "^VERSION=" "" NEUROLINGSCE_VERSION "${VERSION_LINES}")
+string(STRIP "${NEUROLINGSCE_VERSION}" NEUROLINGSCE_VERSION)
+
+
 cmake_minimum_required(VERSION 3.21)
 
-project(NeurolingsCE VERSION 0.1.0 LANGUAGES C CXX)
+project(NeurolingsCE VERSION ${NEUROLINGSCE_VERSION} LANGUAGES C CXX)
 
 if(MSVC)
   # This project expects a 64-bit Qt when using Qt's msvc2022_64 kit.
@@ -410,3 +416,77 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
 else()
   message(STATUS "Non-release build: skipping binary stripping")
 endif()
+
+# Generate metainfo.xml from template with version substitution
+set(METAINFO_TEMPLATE "${CMAKE_CURRENT_SOURCE_DIR}/src/packaging/io.github.qingchenyouforcc.NeurolingsCE.metainfo.xml.in")
+set(METAINFO_OUTPUT "${CMAKE_CURRENT_SOURCE_DIR}/src/packaging/io.github.qingchenyouforcc.NeurolingsCE.metainfo.xml")
+
+add_custom_command(
+  OUTPUT "${METAINFO_OUTPUT}"
+  COMMAND ${CMAKE_COMMAND}
+    -DINPUT_FILE=${METAINFO_TEMPLATE}
+    -DOUTPUT_FILE=${METAINFO_OUTPUT}
+    -DVERSION=${NEUROLINGSCE_VERSION}
+    -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/ConfigureFile.cmake"
+  DEPENDS "${METAINFO_TEMPLATE}" "${CMAKE_CURRENT_SOURCE_DIR}/VERSION.txt"
+  COMMENT "Generating metainfo.xml"
+  VERBATIM
+)
+
+add_custom_target(generate_metainfo ALL DEPENDS "${METAINFO_OUTPUT}")
+add_dependencies(NeurolingsCE generate_metainfo)
+
+
+# Generate resources.rc from template (Windows)
+set(RESOURCES_RC_TEMPLATE "${CMAKE_CURRENT_SOURCE_DIR}/src/resources/resources.rc.in")
+set(RESOURCES_RC_OUTPUT "${CMAKE_CURRENT_SOURCE_DIR}/src/resources/resources.rc")
+
+add_custom_command(
+  OUTPUT "${RESOURCES_RC_OUTPUT}"
+  COMMAND ${CMAKE_COMMAND}
+    -DINPUT_FILE=${RESOURCES_RC_TEMPLATE}
+    -DOUTPUT_FILE=${RESOURCES_RC_OUTPUT}
+    -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/ConfigureFile.cmake"
+  DEPENDS "${RESOURCES_RC_TEMPLATE}" "${CMAKE_CURRENT_SOURCE_DIR}/VERSION.txt"
+  COMMENT "Generating resources.rc"
+  VERBATIM
+)
+
+add_custom_target(generate_resources_rc ALL DEPENDS "${RESOURCES_RC_OUTPUT}")
+add_dependencies(NeurolingsCE generate_resources_rc)
+
+# Generate Info.plist from template (macOS)
+set(INFO_PLIST_TEMPLATE "${CMAKE_CURRENT_SOURCE_DIR}/src/packaging/NeurolingsCE.app/Contents/Info.plist.in")
+set(INFO_PLIST_OUTPUT "${CMAKE_CURRENT_SOURCE_DIR}/src/packaging/NeurolingsCE.app/Contents/Info.plist")
+
+add_custom_command(
+  OUTPUT "${INFO_PLIST_OUTPUT}"
+  COMMAND ${CMAKE_COMMAND}
+    -DINPUT_FILE=${INFO_PLIST_TEMPLATE}
+    -DOUTPUT_FILE=${INFO_PLIST_OUTPUT}
+    -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/ConfigureFile.cmake"
+  DEPENDS "${INFO_PLIST_TEMPLATE}" "${CMAKE_CURRENT_SOURCE_DIR}/VERSION.txt"
+  COMMENT "Generating Info.plist"
+  VERBATIM
+)
+
+add_custom_target(generate_info_plist ALL DEPENDS "${INFO_PLIST_OUTPUT}")
+add_dependencies(NeurolingsCE generate_info_plist)
+
+# Generate GNOME extension metadata.json from template (Linux)
+set(GNOME_METADATA_TEMPLATE "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/Platform/Linux/gnome_script/metadata.json.in")
+set(GNOME_METADATA_OUTPUT "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/Platform/Linux/gnome_script/metadata.json")
+
+add_custom_command(
+  OUTPUT "${GNOME_METADATA_OUTPUT}"
+  COMMAND ${CMAKE_COMMAND}
+    -DINPUT_FILE=${GNOME_METADATA_TEMPLATE}
+    -DOUTPUT_FILE=${GNOME_METADATA_OUTPUT}
+    -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/ConfigureFile.cmake"
+  DEPENDS "${GNOME_METADATA_TEMPLATE}" "${CMAKE_CURRENT_SOURCE_DIR}/VERSION.txt"
+  COMMENT "Generating GNOME extension metadata.json"
+  VERBATIM
+)
+
+add_custom_target(generate_gnome_metadata ALL DEPENDS "${GNOME_METADATA_OUTPUT}")
+add_dependencies(NeurolingsCE generate_gnome_metadata)

@@ -1,3 +1,7 @@
+# Read version from VERSION.txt file
+NEUROLINGSCE_VERSION := $(shell grep "^VERSION=" VERSION.txt 2>/dev/null | cut -d= -f2 || echo "0.1.0")
+
+
 QT_VERSION := 6
 
 ifeq ($(QT_VERSION),6)

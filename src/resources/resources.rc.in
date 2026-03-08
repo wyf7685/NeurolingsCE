@@ -1,7 +1,7 @@
 id ICON "../packaging/neurolingsce.ico"
 1 VERSIONINFO
-FILEVERSION     0,2,0,0
-PRODUCTVERSION  0,2,0,0
+FILEVERSION     @VERSION_MAJOR@,@VERSION_MINOR@,@VERSION_PATCH@,0
+PRODUCTVERSION  @VERSION_MAJOR@,@VERSION_MINOR@,@VERSION_PATCH@,0
 BEGIN
   BLOCK "StringFileInfo"
   BEGIN
@@ -9,12 +9,12 @@ BEGIN
     BEGIN
       VALUE "CompanyName", "pixelomer"
       VALUE "FileDescription", "NeurolingsCE"
-      VALUE "FileVersion", "0.2.0"
+      VALUE "FileVersion", "@VERSION@"
       VALUE "InternalName", "NeurolingsCE"
       VALUE "LegalCopyright", "Copyright (c) - pixelomer"
       VALUE "OriginalFilename", "NeurolingsCE.exe"
       VALUE "ProductName", "NeurolingsCE"
-      VALUE "ProductVersion", "0.2.0"
+      VALUE "ProductVersion", "@VERSION@"
     END
   END
   BLOCK "VarFileInfo"

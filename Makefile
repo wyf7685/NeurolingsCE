@@ -65,7 +65,7 @@ else
 CXXFLAGS += -DSHIJIMA_USE_QTMULTIMEDIA=0
 endif
 
-CXXFLAGS += -Iinclude -Isrc/platform -Ilibshijima -Ilibshimejifinder -Icpp-httplib -IElaWidgetTools/ElaWidgetTools -I. -DNEUROLINGSCE_VERSION='"0.1.0"'
+CXXFLAGS += -Iinclude -Isrc/platform -Ilibshijima -Ilibshimejifinder -Icpp-httplib -IElaWidgetTools/ElaWidgetTools -I. -DNEUROLINGSCE_VERSION='"$(NEUROLINGSCE_VERSION)"'
 CPPFLAGS += -Iminiz
 PKG_LIBS += libarchive
 PUBLISH_DLL = $(addprefix Qt6,$(QT_LIBS))
@@ -149,7 +149,12 @@ appimage: publish/Linux/$(CONFIG)/NeurolingsCE.AppImage
 macapp: publish/macOS/$(CONFIG)/NeurolingsCE.app
 
 shijima-qt$(EXE): src/platform/Platform/Platform.a libshimejifinder/build/libshimejifinder.a \
-	libshijima/build/libshijima.a ElaWidgetTools/build/ElaWidgetTools/libElaWidgetTools.a shijima-qt.a
+	libshijima/build/libshijima.a ElaWidgetTools/build/ElaWidgetTools/libElaWidgetTools.a shijima-qt.a \
+	src/packaging/io.github.qingchenyouforcc.NeurolingsCE.metainfo.xml \
+	src/resources/resources.rc \
+	src/platform/Platform/Linux/gnome_script/metadata.json
+	libshijima/build/libshijima.a ElaWidgetTools/build/ElaWidgetTools/libElaWidgetTools.a shijima-qt.a \
+	src/packaging/io.github.qingchenyouforcc.NeurolingsCE.metainfo.xml
 	$(CXX) -o $@ $(LD_COPY_NEEDED) $(LD_WHOLE_ARCHIVE) $^ $(LD_NO_WHOLE_ARCHIVE) \
 		$(TARGET_LDFLAGS) $(LDFLAGS)
 	if [ $(CONFIG) = "release" ]; then $(STRIP) $@; fi
@@ -175,6 +180,37 @@ licenses_generated.hpp: $(LICENSE_FILES) Makefile
 		cat $$file >> licenses_generated.hpp; \
 	done
 	echo ')";' >> licenses_generated.hpp
+
+src/packaging/io.github.qingchenyouforcc.NeurolingsCE.metainfo.xml: src/packaging/io.github.qingchenyouforcc.NeurolingsCE.metainfo.xml.in VERSION.txt
+	chmod +x src/tools/generate-metainfo.sh && ./src/tools/generate-metainfo.sh $< $@
+
+src/resources/resources.rc: src/resources/resources.rc.in VERSION.txt
+ifeq ($(PLATFORM),Windows)
+	@echo "Generating resources.rc for Windows..."
+	@VERSION=$$(grep "^VERSION=" VERSION.txt 2>/dev/null | cut -d= -f2 || echo "0.1.0"); \
+   VERSION_MAJOR=$$(grep "^VERSION_MAJOR=" VERSION.txt 2>/dev/null | cut -d= -f2 || echo "0"); \
+   VERSION_MINOR=$$(grep "^VERSION_MINOR=" VERSION.txt 2>/dev/null | cut -d= -f2 || echo "1"); \
+   VERSION_PATCH=$$(grep "^VERSION_PATCH=" VERSION.txt 2>/dev/null | cut -d= -f2 || echo "0"); \
+	 sed -e "s/@VERSION@/$$VERSION/g" \
+     -e "s/@VERSION_MAJOR@/$$VERSION_MAJOR/g" \
+     -e "s/@VERSION_MINOR@/$$VERSION_MINOR/g" \
+     -e "s/@VERSION_PATCH@/$$VERSION_PATCH/g" \
+     $< > $@
+endif
+
+src/packaging/NeurolingsCE.app/Contents/Info.plist: src/packaging/NeurolingsCE.app/Contents/Info.plist.in VERSION.txt
+ifeq ($(PLATFORM),macOS)
+	@echo "Generating Info.plist for macOS..."
+	@VERSION=$$(grep "^VERSION=" VERSION.txt 2>/dev/null | cut -d= -f2 || echo "0.1.0"); \
+	 sed -e "s/@VERSION@/$$VERSION/g" $< > $@
+endif
+
+src/platform/Platform/Linux/gnome_script/metadata.json: src/platform/Platform/Linux/gnome_script/metadata.json.in VERSION.txt
+ifeq ($(PLATFORM),Linux)
+	@echo "Generating metadata.json for GNOME extension..."
+	@VERSION=$$(grep "^VERSION=" VERSION.txt 2>/dev/null | cut -d= -f2 || echo "0.1.0"); \
+	 sed -e "s/@VERSION@/$$VERSION/g" $< > $@
+endif
 
 qrc_resources.cc: src/resources/resources.qrc src/packaging/neurolingsce.ico src/packaging/io.github.qingchenyouforcc.NeurolingsCE.png
 	$(RCC) --name resources -o $@ $<
