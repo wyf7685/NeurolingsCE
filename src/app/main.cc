@@ -40,7 +40,8 @@ int main(int argc, char **argv) {
     #endif
     QApplication app(argc, argv);
     eApp->init();
-    app.setApplicationName("NeurolingsCE");
+    app.setApplicationName(QStringLiteral(APP_NAME));
+    app.setApplicationDisplayName(QStringLiteral(APP_DISPLAY_NAME));
     app.setApplicationDisplayName("NeurolingsCE[Shijima-Qt Edition]");
     {
         QIcon appIcon { QStringLiteral(":/neurolingsce.ico") };
@@ -66,13 +67,13 @@ int main(int argc, char **argv) {
         pingClient.set_read_timeout(0, 500000);
         auto pingResult = pingClient.Get("/shijima/api/v1/ping");
         if (pingResult != nullptr) {
-            throw std::runtime_error(QCoreApplication::translate("main", "NeurolingsCE is already running!").toStdString());
+            throw std::runtime_error(QCoreApplication::translate("main", APP_NAME " is already running!").toStdString());
         }
         ShijimaManager::defaultManager()->show();
     }
     catch (std::exception &ex) {
         QMessageBox *msg = new QMessageBox {};
-        msg->setText(QCoreApplication::translate("main", "NeurolingsCE failed to start. Reason: ") +
+        msg->setText(QCoreApplication::translate("main", APP_NAME " failed to start. Reason: ") +
             QString::fromUtf8(ex.what()));
         msg->setStandardButtons(QMessageBox::StandardButton::Close);
         msg->setAttribute(Qt::WA_DeleteOnClose);

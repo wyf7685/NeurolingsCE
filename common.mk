@@ -1,4 +1,18 @@
-# Read version from VERSION.txt file
+# Read version and app info from VERSION.txt file
+NEUROLINGSCE_VERSION := $(shell grep "^VERSION=" VERSION.txt 2>/dev/null | cut -d= -f2 || echo "0.2.0")
+APP_NAME := $(shell grep "^APP_NAME=" VERSION.txt 2>/dev/null | cut -d= -f2 || echo "NeurolingsCE")
+APP_DISPLAY_NAME := $(shell grep "^APP_DISPLAY_NAME=" VERSION.txt 2>/dev/null | cut -d= -f2 || echo "NeurolingsCE[Shijima-Qt Edition]")
+APP_EXECUTABLE := $(shell grep "^APP_EXECUTABLE=" VERSION.txt 2>/dev/null | cut -d= -f2 || echo "shijima-qt")
+APP_DESCRIPTION := $(shell grep "^APP_DESCRIPTION=" VERSION.txt 2>/dev/null | cut -d= -f2 || echo "Shimeji desktop pet runner")
+APP_COMPANY := $(shell grep "^APP_COMPANY=" VERSION.txt 2>/dev/null | cut -d= -f2 || echo "pixelomer")
+APP_COPYRIGHT := $(shell grep "^APP_COPYRIGHT=" VERSION.txt 2>/dev/null | cut -d= -f2 || echo "Copyright (c) - pixelomer")
+APP_BUNDLE_ID := $(shell grep "^APP_BUNDLE_ID=" VERSION.txt 2>/dev/null | cut -d= -f2 || echo "io.github.qingchenyouforcc.NeurolingsCE")
+APP_BUNDLE_NAME := $(shell grep "^APP_BUNDLE_NAME=" VERSION.txt 2>/dev/null | cut -d= -f2 || echo "NeurolingsCE")
+APP_ICON_NAME := $(shell grep "^APP_ICON_NAME=" VERSION.txt 2>/dev/null | cut -d= -f2 || echo "io.github.qingchenyouforcc.NeurolingsCE")
+APP_DESKTOP_CATEGORIES := $(shell grep "^APP_DESKTOP_CATEGORIES=" VERSION.txt 2>/dev/null | cut -d= -f2 || echo "Game")
+
+
+QT_VERSION := 6
 NEUROLINGSCE_VERSION := $(shell grep "^VERSION=" VERSION.txt 2>/dev/null | cut -d= -f2 || echo "0.1.0")
 
 

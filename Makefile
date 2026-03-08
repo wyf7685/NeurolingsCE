@@ -148,13 +148,11 @@ appimage: publish/Linux/$(CONFIG)/NeurolingsCE.AppImage
 
 macapp: publish/macOS/$(CONFIG)/NeurolingsCE.app
 
-shijima-qt$(EXE): src/platform/Platform/Platform.a libshimejifinder/build/libshimejifinder.a \
-	libshijima/build/libshijima.a ElaWidgetTools/build/ElaWidgetTools/libElaWidgetTools.a shijima-qt.a \
+$(APP_EXECUTABLE)$(EXE): src/platform/Platform/Platform.a libshimejifinder/build/libshimejifinder.a \
+	libshijima/build/libshijima.a ElaWidgetTools/build/ElaWidgetTools/libElaWidgetTools.a $(APP_EXECUTABLE).a \
 	src/packaging/io.github.qingchenyouforcc.NeurolingsCE.metainfo.xml \
 	src/resources/resources.rc \
 	src/platform/Platform/Linux/gnome_script/metadata.json
-	libshijima/build/libshijima.a ElaWidgetTools/build/ElaWidgetTools/libElaWidgetTools.a shijima-qt.a \
-	src/packaging/io.github.qingchenyouforcc.NeurolingsCE.metainfo.xml
 	$(CXX) -o $@ $(LD_COPY_NEEDED) $(LD_WHOLE_ARCHIVE) $^ $(LD_NO_WHOLE_ARCHIVE) \
 		$(TARGET_LDFLAGS) $(LDFLAGS)
 	if [ $(CONFIG) = "release" ]; then $(STRIP) $@; fi
@@ -245,10 +243,15 @@ ElaWidgetTools/build/ElaWidgetTools/libElaWidgetTools.a: ElaWidgetTools/build/Ma
 
 clean::
 	rm -rf publish/$(PLATFORM)/$(CONFIG) libshijima/build libshimejifinder/build ElaWidgetTools/build
-	rm -f $(OBJECTS) shijima-qt.a shijima-qt$(EXE) NeurolingsCE.AppImage qrc_resources.cc qrc_i18n.cc $(QM_FILES) src/app/*.moc
+	rm -f $(OBJECTS) $(APP_EXECUTABLE).a $(APP_EXECUTABLE)$(EXE) $(APP_NAME).AppImage qrc_resources.cc qrc_i18n.cc $(QM_FILES) src/app/*.moc
 	$(MAKE) -C src/platform/Platform clean
 
 install:
+	install -Dm755 publish/Linux/$(CONFIG)/$(APP_EXECUTABLE) $(PREFIX)/bin/$(APP_EXECUTABLE)
+	install -Dm755 publish/Linux/$(CONFIG)/libunarr.so.1 $(PREFIX)/lib/libunarr.so.1
+	install -Dm644 src/packaging/io.github.qingchenyouforcc.NeurolingsCE.desktop $(PREFIX)/share/applications/$(APP_BUNDLE_ID).desktop
+	install -Dm644 src/packaging/io.github.qingchenyouforcc.NeurolingsCE.metainfo.xml $(PREFIX)/share/metainfo/$(APP_BUNDLE_ID).metainfo.xml
+	install -Dm644 src/packaging/io.github.qingchenyouforcc.NeurolingsCE.png $(PREFIX)/share/icons/hicolor/512x512/apps/$(APP_BUNDLE_ID).png
 	install -Dm755 publish/Linux/$(CONFIG)/shijima-qt $(PREFIX)/bin/shijima-qt
 	install -Dm755 publish/Linux/$(CONFIG)/libunarr.so.1 $(PREFIX)/lib/libunarr.so.1
 	install -Dm644 src/packaging/io.github.qingchenyouforcc.NeurolingsCE.desktop $(PREFIX)/share/applications/io.github.qingchenyouforcc.NeurolingsCE.desktop
@@ -256,6 +259,11 @@ install:
 	install -Dm644 src/packaging/io.github.qingchenyouforcc.NeurolingsCE.png $(PREFIX)/share/icons/hicolor/512x512/apps/io.github.qingchenyouforcc.NeurolingsCE.png
 
 uninstall:
+	rm -f $(PREFIX)/bin/$(APP_EXECUTABLE)
+	rm -f $(PREFIX)/lib/libunarr.so.1
+	rm -f $(PREFIX)/share/applications/$(APP_BUNDLE_ID).desktop
+	rm -f $(PREFIX)/share/metainfo/$(APP_BUNDLE_ID).metainfo.xml
+	rm -f $(PREFIX)/share/icons/hicolor/512x512/apps/$(APP_BUNDLE_ID).png
 	rm -f $(PREFIX)/bin/shijima-qt
 	rm -f $(PREFIX)/lib/libunarr.so.1
 	rm -f $(PREFIX)/share/applications/io.github.qingchenyouforcc.NeurolingsCE.desktop
@@ -265,7 +273,7 @@ uninstall:
 src/platform/Platform/Platform.a: FORCE
 	$(MAKE) -C src/platform/Platform
 
-shijima-qt.a: $(OBJECTS) Makefile
+$(APP_EXECUTABLE).a: $(OBJECTS) Makefile
 	ar rcs $@ $(filter %.o,$^)
 
 .PHONY: install uninstall update-translations

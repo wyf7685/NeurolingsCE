@@ -7,13 +7,13 @@ BEGIN
   BEGIN
     BLOCK "080904E4"
     BEGIN
-      VALUE "CompanyName", "pixelomer"
-      VALUE "FileDescription", "NeurolingsCE"
+      VALUE "CompanyName", "@APP_COMPANY@"
+      VALUE "FileDescription", "@APP_NAME@"
       VALUE "FileVersion", "@VERSION@"
-      VALUE "InternalName", "NeurolingsCE"
-      VALUE "LegalCopyright", "Copyright (c) - pixelomer"
-      VALUE "OriginalFilename", "NeurolingsCE.exe"
-      VALUE "ProductName", "NeurolingsCE"
+      VALUE "InternalName", "@APP_NAME@"
+      VALUE "LegalCopyright", "@APP_COPYRIGHT@"
+      VALUE "OriginalFilename", "@APP_EXECUTABLE@.exe"
+      VALUE "ProductName", "@APP_NAME@"
       VALUE "ProductVersion", "@VERSION@"
     END
   END

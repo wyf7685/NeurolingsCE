@@ -1,8 +1,8 @@
 {
-    "uuid": "shijima-helper@pixelomer.github.io",
+    "uuid": "@EXTENSION_UUID@",
     "version-name": "@VERSION@",
-    "name": "Shijima GNOME Helper",
-    "description": "Shijima GNOME Helper",
+    "name": "@EXTENSION_NAME@",
+    "description": "@EXTENSION_DESCRIPTION@",
     "shell-version": [ "46", "47" ],
     "url": "https://github.com/pixelomer/Shijima-Qt"
 }

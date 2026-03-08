@@ -219,7 +219,7 @@ static void setupTrayIconFor(ShijimaManager *self) {
     }
 
     g_trayIcon = new QSystemTrayIcon(self);
-    g_trayIcon->setToolTip(QCoreApplication::translate("ShijimaManager", "Shijima-Qt"));
+    g_trayIcon->setToolTip(QCoreApplication::translate("ShijimaManager", APP_NAME));
     g_trayIcon->setIcon(makeTrayIconFallback(self));
 
     g_trayMenu = new QMenu(self);
@@ -1270,7 +1270,7 @@ ShijimaManager::ShijimaManager(QWidget *parent):
 
 
     // Window title and status bar
-    setWindowTitle(tr("NeurolingsCE \u2014 Mascot Manager"));
+    setWindowTitle(tr(APP_NAME " \u2014 Mascot Manager"));
     auto *elaStatusBar = new ElaStatusBar(this);
     setStatusBar(elaStatusBar);
     m_statusLabel = new QLabel(this);
@@ -1775,7 +1775,7 @@ void ShijimaManager::switchLanguage(const QString &langCode) {
 }
 
 void ShijimaManager::retranslateUi() {
-    setWindowTitle(tr("NeurolingsCE \u2014 Mascot Manager"));
+    setWindowTitle(tr(APP_NAME " \u2014 Mascot Manager"));
     updateStatusBar();
     rebuildTrayMenuFor(this);
     // Note: ElaWindow navigation node labels (Home, Settings, About) are set at

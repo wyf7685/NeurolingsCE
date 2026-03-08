@@ -1,7 +1,8 @@
-# NeurolingsCE Version Information
-# This is the single source of truth for the project version.
-# Update this file to change the version across all build systems.
+# NeurolingsCE Global Configuration
+# This is the single source of truth for the project version and application info.
+# Update this file to change version and application names across all build systems.
 
+# Version Information
 VERSION=0.2.0
 VERSION_MAJOR=0
 VERSION_MINOR=2
@@ -12,3 +13,24 @@ VERSION_NAME=Alpha
 
 # Release date (format: YYYY-MM-DD)
 RELEASE_DATE=2026-03-08
+
+# Application Information
+APP_NAME=NeurolingsCE
+APP_DISPLAY_NAME=NeurolingsCE[Shijima-Qt Edition]
+APP_EXECUTABLE=NeurolingsCE
+APP_DESCRIPTION=Shimeji desktop pet runner
+APP_COMPANY=qingchenyou
+APP_COPYRIGHT=Copyright (c) - qingchenyou
+
+# Bundle Identifiers
+APP_BUNDLE_ID=io.github.qingchenyouforcc.NeurolingsCE
+APP_BUNDLE_NAME=NeurolingsCE
+
+# Desktop Integration
+APP_ICON_NAME=io.github.qingchenyouforcc.NeurolingsCE
+APP_DESKTOP_CATEGORIES=Game
+
+# Extension/GNOME
+EXTENSION_UUID=shijima-helper@pixelomer.github.io
+EXTENSION_NAME=Shijima GNOME Helper
+EXTENSION_DESCRIPTION=Shijima GNOME Helper
