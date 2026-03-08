@@ -1,5 +1,10 @@
 name: Build release
 
+# 防止重复构建：手动触发时新的触发会取消旧的
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 on: [workflow_dispatch]
 
 jobs:
@@ -23,7 +28,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: shijima-qt-dev.tar.gz
-          key: docker-fedora-42-qt6-mingw-${{ hashFiles('dev-docker/Dockerfile') }}
+          key: docker-fedora-42-qt6-mingw-v2-${{ hashFiles('dev-docker/Dockerfile') }}
       - name: Build Docker image
         if: steps.cache-docker.outputs.cache-hit != 'true'
         run: |
@@ -35,10 +40,17 @@ jobs:
         if: steps.cache-docker.outputs.cache-hit == 'true'
         run: |
           gunzip -c < shijima-qt-dev.tar.gz | docker load
+      - name: Patch ElaWidgetTools for Qt 6.8 compatibility
+        run: |
+          # Remove the Qt version upper bound check in ElaWidgetTools
+          # This allows building with Qt 6.8+ in the Docker environment
+          sed -i 's/if (${QT_VERSION} VERSION_GREATER 6.7.0 OR ${QT_VERSION} VERSION_LESS 5.12.0)/if (${QT_VERSION} VERSION_LESS 5.12.0)/' ElaWidgetTools/CMakeLists.txt
+          # Change FATAL_ERROR to WARNING for the intermediate Qt versions
+          sed -i 's/message(FATAL_ERROR "你当前使用的QT版本为不推荐版本/message(WARNING "你当前使用的QT版本为不推荐版本/' ElaWidgetTools/CMakeLists.txt
       - name: Build Windows x86_64 release build
         run: |
           docker run -e CONFIG=release --rm -v "$(pwd)":/work shijima-qt-dev bash -c \
-            'mingw64-make clean && mingw64-make -j$(nproc) && cp -r licenses publish/Windows/release/'
+            'mingw64-make clean && mingw64-make -j2 && cp -r licenses publish/Windows/release/'
       - name: Archive Windows x86_64 release build
         uses: actions/upload-artifact@v4
         with:
@@ -69,28 +81,155 @@ jobs:
       - name: Install Qt6
         uses: jdpurcell/install-qt-action@v5
         with:
-          use-naqt: true
+          # Note: use-naqt removed because naqt doesn't support qttools module
           version: '6.8.2'
           host: ${{ (matrix.runner == 'ubuntu-24.04-arm') && 'linux_arm64' || 'linux' }}
           target: 'desktop'
           arch: ${{ (matrix.runner == 'ubuntu-24.04-arm') && 'linux_gcc_arm64' || 'linux_gcc_64' }}
           modules: 'qtmultimedia'
           cache: true
+      - name: Install Qt6 sources (private headers)
+        run: |
+          QT_DIR="${{ runner.workspace }}/Qt/6.8.2/${{ (matrix.runner == 'ubuntu-24.04-arm') && 'gcc_arm64' || 'gcc_64' }}"
+          mkdir -p $QT_DIR/include/QtWidgets/private
+          mkdir -p $QT_DIR/include/QtGui/private
+          mkdir -p $QT_DIR/include/QtCore/private
+          cd /tmp
+          echo "Downloading Qt 6.8.2 source code..."
+          wget -q --timeout=120 https://download.qt.io/archive/qt/6.8/6.8.2/submodules/qtbase-everywhere-src-6.8.2.tar.xz
+          echo "Source downloaded, extracting private headers..."
+          tar -xf qtbase-everywhere-src-6.8.2.tar.xz
+          echo "Copying private headers (QtWidgets, QtGui, QtCore)..."
+          find qtbase-everywhere-src-6.8.2/src/widgets -name '*_p.h' -exec cp {} $QT_DIR/include/QtWidgets/private/ \; 2>/dev/null || true
+          find qtbase-everywhere-src-6.8.2/src/gui -name '*_p.h' -exec cp {} $QT_DIR/include/QtGui/private/ \; 2>/dev/null || true
+          find qtbase-everywhere-src-6.8.2/src/corelib -name '*_p.h' -exec cp {} $QT_DIR/include/QtCore/private/ \; 2>/dev/null || true
+          echo "Private headers installed:"
+          echo "  QtWidgets/private: $(ls $QT_DIR/include/QtWidgets/private/ | wc -l) files"
+          echo "  QtGui/private: $(ls $QT_DIR/include/QtGui/private/ | wc -l) files"
+          echo "  QtCore/private: $(ls $QT_DIR/include/QtCore/private/ | wc -l) files"
+          rm -rf qtbase-everywhere-src-6.8.2 qtbase-everywhere-src-6.8.2.tar.xz
       - name: Install build dependencies
         run: |
-          sudo apt-get install -y libxcb-cursor0 libarchive-dev libwayland-dev wayland-protocols
+          sudo apt-get update
+          sudo apt-get install -y libxcb-cursor0 libarchive-dev libwayland-dev wayland-protocols ccache
       - name: Install build dependencies (arm64)
         if: matrix.runner == 'ubuntu-24.04-arm'
         run: |
           sudo apt-get install -y libgstreamer-plugins-bad1.0-0 libgstreamer-plugins-good1.0-0
-      - name: Build Linux release build
+      - name: Prepare build environment
         env:
           CONFIG: release
+          QT_DIR: ${{ runner.workspace }}/Qt/6.8.2/${{ (matrix.runner == 'ubuntu-24.04-arm') && 'gcc_arm64' || 'gcc_64' }}
         run: |
-          make clean
-          make -j$(nproc)
-          make appimage
+          export PATH="/usr/lib/ccache:$QT_DIR/bin:$QT_DIR/libexec:$PATH"
+          export PKG_CONFIG_PATH="$QT_DIR/lib/pkgconfig:$PKG_CONFIG_PATH"
+          export Qt6_DIR="$QT_DIR/lib/cmake/Qt6"
+          export MOC="$QT_DIR/libexec/moc"
+          export RCC="$QT_DIR/libexec/rcc"
+          export LRELEASE="$QT_DIR/bin/lrelease"
+          export CXXFLAGS="$CXXFLAGS -I$QT_DIR/include/QtCore/6.8.2 -I$QT_DIR/include/QtCore/6.8.2/QtCore -I$QT_DIR/include/QtWidgets/6.8.2 -I$QT_DIR/include/QtWidgets/6.8.2/QtWidgets -I/usr/include/x86_64-linux-gnu/qt6/QtCore/6.8.2 -I/usr/include/x86_64-linux-gnu/qt6/QtWidgets/6.8.2"
+          echo "ccache stats before:"
+          ccache -s
+          make licenses_generated.hpp
+          cp licenses_generated.hpp include/
+          echo "Environment prepared"
+      - name: Build Platform library
+        env:
+          CONFIG: release
+          QT_DIR: ${{ runner.workspace }}/Qt/6.8.2/${{ (matrix.runner == 'ubuntu-24.04-arm') && 'gcc_arm64' || 'gcc_64' }}
+        run: |
+          export PATH="/usr/lib/ccache:$QT_DIR/bin:$QT_DIR/libexec:$PATH"
+          export PKG_CONFIG_PATH="$QT_DIR/lib/pkgconfig:$PKG_CONFIG_PATH"
+          export Qt6_DIR="$QT_DIR/lib/cmake/Qt6"
+          export MOC="$QT_DIR/libexec/moc"
+          export RCC="$QT_DIR/libexec/rcc"
+          export LRELEASE="$QT_DIR/bin/lrelease"
+          export CXXFLAGS="$CXXFLAGS -I$QT_DIR/include/QtCore/6.8.2 -I$QT_DIR/include/QtCore/6.8.2/QtCore -I$QT_DIR/include/QtWidgets/6.8.2 -I$QT_DIR/include/QtWidgets/6.8.2/QtWidgets -I/usr/include/x86_64-linux-gnu/qt6/QtCore/6.8.2 -I/usr/include/x86_64-linux-gnu/qt6/QtWidgets/6.8.2"
+          echo "::group::Building Platform library"
+          time make -j4 src/platform/Platform/Platform.a
+          echo "::endgroup::"
+      - name: Build libshijima
+        env:
+          CONFIG: release
+          QT_DIR: ${{ runner.workspace }}/Qt/6.8.2/${{ (matrix.runner == 'ubuntu-24.04-arm') && 'gcc_arm64' || 'gcc_64' }}
+        run: |
+          export PATH="/usr/lib/ccache:$QT_DIR/bin:$QT_DIR/libexec:$PATH"
+          export PKG_CONFIG_PATH="$QT_DIR/lib/pkgconfig:$PKG_CONFIG_PATH"
+          export Qt6_DIR="$QT_DIR/lib/cmake/Qt6"
+          export MOC="$QT_DIR/libexec/moc"
+          export RCC="$QT_DIR/libexec/rcc"
+          export LRELEASE="$QT_DIR/bin/lrelease"
+          export CXXFLAGS="$CXXFLAGS -I$QT_DIR/include/QtCore/6.8.2 -I$QT_DIR/include/QtCore/6.8.2/QtCore -I$QT_DIR/include/QtWidgets/6.8.2 -I$QT_DIR/include/QtWidgets/6.8.2/QtWidgets -I/usr/include/x86_64-linux-gnu/qt6/QtCore/6.8.2 -I/usr/include/x86_64-linux-gnu/qt6/QtWidgets/6.8.2"
+          echo "::group::Building libshijima"
+          time make -j4 libshijima/build/libshijima.a
+          echo "::endgroup::"
+      - name: Build libshimejifinder
+        env:
+          CONFIG: release
+          QT_DIR: ${{ runner.workspace }}/Qt/6.8.2/${{ (matrix.runner == 'ubuntu-24.04-arm') && 'gcc_arm64' || 'gcc_64' }}
+        run: |
+          export PATH="/usr/lib/ccache:$QT_DIR/bin:$QT_DIR/libexec:$PATH"
+          export PKG_CONFIG_PATH="$QT_DIR/lib/pkgconfig:$PKG_CONFIG_PATH"
+          export Qt6_DIR="$QT_DIR/lib/cmake/Qt6"
+          export MOC="$QT_DIR/libexec/moc"
+          export RCC="$QT_DIR/libexec/rcc"
+          export LRELEASE="$QT_DIR/bin/lrelease"
+          export CXXFLAGS="$CXXFLAGS -I$QT_DIR/include/QtCore/6.8.2 -I$QT_DIR/include/QtCore/6.8.2/QtCore -I$QT_DIR/include/QtWidgets/6.8.2 -I$QT_DIR/include/QtWidgets/6.8.2/QtWidgets -I/usr/include/x86_64-linux-gnu/qt6/QtCore/6.8.2 -I/usr/include/x86_64-linux-gnu/qt6/QtWidgets/6.8.2"
+          echo "::group::Building libshimejifinder"
+          time make -j4 libshimejifinder/build/libshimejifinder.a
+          echo "::endgroup::"
+      - name: Build ElaWidgetTools
+        timeout-minutes: 30
+        env:
+          CONFIG: release
+          QT_DIR: ${{ runner.workspace }}/Qt/6.8.2/${{ (matrix.runner == 'ubuntu-24.04-arm') && 'gcc_arm64' || 'gcc_64' }}
+        run: |
+          export PATH="/usr/lib/ccache:$QT_DIR/bin:$QT_DIR/libexec:$PATH"
+          export PKG_CONFIG_PATH="$QT_DIR/lib/pkgconfig:$PKG_CONFIG_PATH"
+          export Qt6_DIR="$QT_DIR/lib/cmake/Qt6"
+          export MOC="$QT_DIR/libexec/moc"
+          export RCC="$QT_DIR/libexec/rcc"
+          export LRELEASE="$QT_DIR/bin/lrelease"
+          echo "::group::Building ElaWidgetTools"
+          rm -rf ElaWidgetTools/build
+          time make -j2 ElaWidgetTools/build/ElaWidgetTools/libElaWidgetTools.a
+          echo "::endgroup::"
+      - name: Build main application
+        timeout-minutes: 30
+        env:
+          CONFIG: release
+          QT_DIR: ${{ runner.workspace }}/Qt/6.8.2/${{ (matrix.runner == 'ubuntu-24.04-arm') && 'gcc_arm64' || 'gcc_64' }}
+        run: |
+          export PATH="/usr/lib/ccache:$QT_DIR/bin:$QT_DIR/libexec:$PATH"
+          export PKG_CONFIG_PATH="$QT_DIR/lib/pkgconfig:$PKG_CONFIG_PATH"
+          export Qt6_DIR="$QT_DIR/lib/cmake/Qt6"
+          export MOC="$QT_DIR/libexec/moc"
+          export RCC="$QT_DIR/libexec/rcc"
+          export LRELEASE="$QT_DIR/bin/lrelease"
+          export CXXFLAGS="$CXXFLAGS -I$QT_DIR/include/QtCore/6.8.2 -I$QT_DIR/include/QtCore/6.8.2/QtCore -I$QT_DIR/include/QtWidgets/6.8.2 -I$QT_DIR/include/QtWidgets/6.8.2/QtWidgets -I/usr/include/x86_64-linux-gnu/qt6/QtCore/6.8.2 -I/usr/include/x86_64-linux-gnu/qt6/QtWidgets/6.8.2"
+          echo "::group::Building main application"
+          # Use -j2 instead of -j4 to avoid resource exhaustion
+          time make -j2 shijima-qt
+          echo "::endgroup::"
+      - name: Create AppImage and package
+        env:
+          CONFIG: release
+          QT_DIR: ${{ runner.workspace }}/Qt/6.8.2/${{ (matrix.runner == 'ubuntu-24.04-arm') && 'gcc_arm64' || 'gcc_64' }}
+        run: |
+          export PATH="/usr/lib/ccache:$QT_DIR/bin:$QT_DIR/libexec:$PATH"
+          export PKG_CONFIG_PATH="$QT_DIR/lib/pkgconfig:$PKG_CONFIG_PATH"
+          export Qt6_DIR="$QT_DIR/lib/cmake/Qt6"
+          export MOC="$QT_DIR/libexec/moc"
+          export RCC="$QT_DIR/libexec/rcc"
+          export LRELEASE="$QT_DIR/bin/lrelease"
+          export CXXFLAGS="$CXXFLAGS -I$QT_DIR/include/QtCore/6.8.2 -I$QT_DIR/include/QtCore/6.8.2/QtCore -I$QT_DIR/include/QtWidgets/6.8.2 -I$QT_DIR/include/QtWidgets/6.8.2/QtWidgets -I/usr/include/x86_64-linux-gnu/qt6/QtCore/6.8.2 -I/usr/include/x86_64-linux-gnu/qt6/QtWidgets/6.8.2"
+          echo "::group::Creating AppImage"
+          time make appimage
           cp -r licenses publish/Linux/release/
+          echo "::endgroup::"
+          echo ""
+          echo "ccache stats after build:"
+          ccache -s
       - name: Archive Linux release build
         uses: actions/upload-artifact@v4
         with:

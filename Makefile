@@ -19,6 +19,8 @@ SOURCES = src/app/main.cc \
 	src/app/ShijimaHttpApi.cc \
 	src/app/cli.cc \
 	src/app/SpeechBubbleWidget.cc \
+	src/app/SimpleZipImporter.cc \
+	miniz/miniz.c \
 	src/resources/resources.rc \
 	qrc_resources.cc \
 	qrc_i18n.cc
@@ -63,7 +65,8 @@ else
 CXXFLAGS += -DSHIJIMA_USE_QTMULTIMEDIA=0
 endif
 
-CXXFLAGS += -Iinclude -Isrc/platform -Ilibshijima -Ilibshimejifinder -Icpp-httplib -IElaWidgetTools/ElaWidgetTools -DNEUROLINGSCE_VERSION='"0.1.0"'
+CXXFLAGS += -Iinclude -Isrc/platform -Ilibshijima -Ilibshimejifinder -Icpp-httplib -IElaWidgetTools/ElaWidgetTools -I. -DNEUROLINGSCE_VERSION='"0.1.0"'
+CPPFLAGS += -Iminiz
 PKG_LIBS += libarchive
 PUBLISH_DLL = $(addprefix Qt6,$(QT_LIBS))
 
@@ -174,13 +177,13 @@ licenses_generated.hpp: $(LICENSE_FILES) Makefile
 	echo ')";' >> licenses_generated.hpp
 
 qrc_resources.cc: src/resources/resources.qrc src/packaging/neurolingsce.ico src/packaging/io.github.qingchenyouforcc.NeurolingsCE.png
-	$(RCC) -o $@ $<
+	$(RCC) --name resources -o $@ $<
 
 translations/%.qm: translations/%.ts
 	$(LRELEASE) $< -qm $@
 
 qrc_i18n.cc: translations/i18n.qrc $(QM_FILES)
-	$(RCC) -o $@ $<
+	$(RCC) --name i18n -o $@ $<
 libshijima/build/Makefile: libshijima/CMakeLists.txt FORCE
 	mkdir -p libshijima/build && cd libshijima/build && $(CMAKE) $(CMAKEFLAGS) -DSHIJIMA_BUILD_EXAMPLES=NO ..
 
@@ -194,14 +197,19 @@ libshimejifinder/build/libshimejifinder.a: libshimejifinder/build/Makefile
 		libshimejifinder/build/unarr/libunarr.dll; fi
 
 ElaWidgetTools/build/Makefile: ElaWidgetTools/ElaWidgetTools/CMakeLists.txt cmake/ElaWidgetToolsBuild/CMakeLists.txt FORCE
+ifeq ($(PLATFORM),Windows)
+	# For MinGW cross-compilation in Docker, override the hardcoded QT_SDK_DIR
+	mkdir -p ElaWidgetTools/build && cd ElaWidgetTools/build && $(CMAKE) $(CMAKEFLAGS) -DQT_SDK_DIR=/usr/x86_64-w64-mingw32/sys-root/mingw -DELAWIDGETTOOLS_BUILD_STATIC_LIB=ON -DELAWIDGETTOOLS_SOURCE_DIR=$(shell pwd)/ElaWidgetTools/ElaWidgetTools ../../cmake/ElaWidgetToolsBuild
+else
 	mkdir -p ElaWidgetTools/build && cd ElaWidgetTools/build && $(CMAKE) $(CMAKEFLAGS) -DELAWIDGETTOOLS_BUILD_STATIC_LIB=ON -DELAWIDGETTOOLS_SOURCE_DIR=$(shell pwd)/ElaWidgetTools/ElaWidgetTools ../../cmake/ElaWidgetToolsBuild
+endif
 
 ElaWidgetTools/build/ElaWidgetTools/libElaWidgetTools.a: ElaWidgetTools/build/Makefile
 	$(MAKE) -C ElaWidgetTools/build
 
 clean::
 	rm -rf publish/$(PLATFORM)/$(CONFIG) libshijima/build libshimejifinder/build ElaWidgetTools/build
-	rm -f $(OBJECTS) shijima-qt.a shijima-qt$(EXE) NeurolingsCE.AppImage qrc_resources.cc qrc_i18n.cc $(QM_FILES)
+	rm -f $(OBJECTS) shijima-qt.a shijima-qt$(EXE) NeurolingsCE.AppImage qrc_resources.cc qrc_i18n.cc $(QM_FILES) src/app/*.moc
 	$(MAKE) -C src/platform/Platform clean
 
 install:

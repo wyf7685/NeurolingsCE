@@ -14,9 +14,10 @@ PKG_CONFIG ?= pkg-config
 WINDRES ?= $(patsubst %-windres,%-gcc,$(CC))
 AR ?= ar
 CMAKE ?= cmake
-RCC ?= rcc
-LRELEASE ?= lrelease
+RCC ?= $(shell pkg-config Qt$(QT_VERSION)Core --variable=rcc 2>/dev/null || echo rcc)
+LRELEASE ?= $(shell pkg-config Qt$(QT_VERSION)Core --variable=lrelease 2>/dev/null || echo lrelease)
 
+MOC ?= $(shell pkg-config Qt$(QT_VERSION)Core --variable=moc 2>/dev/null || echo moc)
 PLATFORM :=
 PLATFORM_CFLAGS :=
 PLATFORM_CXXFLAGS :=
@@ -186,4 +187,16 @@ FORCE: ;
 
 .PHONY: all clean FORCE
 
+# Qt MOC (Meta-Object Compiler) rules
+# Generate .moc files in src/app from headers in include/shijima-qt/
+# Source files include these with #include "ClassName.moc"
+src/app/%.moc: include/shijima-qt/%.hpp
+	$(MOC) -Iinclude $(QT_CFLAGS) $< -o $@
+
+# Ensure moc files are generated before compiling objects that need them
+src/app/ShijimaManager.o: src/app/ShijimaManager.moc
+src/app/ShijimaContextMenu.o: src/app/ShijimaContextMenu.moc
+src/app/ShijimaLicensesDialog.o: src/app/ShijimaLicensesDialog.moc
+src/app/ShimejiInspectorDialog.o: src/app/ShimejiInspectorDialog.moc
+src/app/SpeechBubbleWidget.o: src/app/SpeechBubbleWidget.moc
 -include *.d
