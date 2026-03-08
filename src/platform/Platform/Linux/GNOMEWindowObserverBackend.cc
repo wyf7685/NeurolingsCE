@@ -25,8 +25,12 @@
 
 namespace Platform {
 
+#ifndef NEUROLINGSCE_VERSION
+#define NEUROLINGSCE_VERSION "0.1.0"
+#endif
+
 const QString GNOMEWindowObserverBackend::m_gnomeScriptUUID = "shijima-helper@pixelomer.github.io";
-const QString GNOMEWindowObserverBackend::m_gnomeScriptVersion = "0.1.0";
+const QString GNOMEWindowObserverBackend::m_gnomeScriptVersion = NEUROLINGSCE_VERSION;
 
 GNOMEWindowObserverBackend::GNOMEWindowObserverBackend(): m_extensionFile(
     "shijima_gnome_extension.zip", false, gnome_script, gnome_script_len)

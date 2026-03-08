@@ -1,0 +1,14 @@
+# NeurolingsCE Version Information
+# This is the single source of truth for the project version.
+# Update this file to change the version across all build systems.
+
+VERSION=0.2.0
+VERSION_MAJOR=0
+VERSION_MINOR=2
+VERSION_PATCH=0
+
+# Human-readable version name (optional)
+VERSION_NAME=Alpha
+
+# Release date (format: YYYY-MM-DD)
+RELEASE_DATE=2026-03-08
