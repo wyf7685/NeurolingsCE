@@ -1,19 +1,9 @@
-# Read version and app info from VERSION.txt file
-file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/VERSION.txt" VERSION_LINES)
-foreach(LINE ${VERSION_LINES})
-  if(LINE MATCHES "^([A-Z_]+)=(.*)$")
-    set(${CMAKE_MATCH_1} "${CMAKE_MATCH_2}")
-  endif()
-endforeach()
-foreach(VAR VERSION VERSION_MAJOR VERSION_MINOR VERSION_PATCH APP_NAME APP_DISPLAY_NAME APP_EXECUTABLE APP_DESCRIPTION APP_COMPANY APP_COPYRIGHT APP_BUNDLE_ID APP_BUNDLE_NAME APP_ICON_NAME APP_DESKTOP_CATEGORIES)
-  if(DEFINED ${VAR})
-    string(STRIP "${${VAR}}" ${VAR})
-  endif()
-endforeach()
-
 cmake_minimum_required(VERSION 3.21)
 
-project(${APP_NAME} VERSION ${VERSION} LANGUAGES C CXX)
+include(cmake/Version.cmake)
+load_version(${CMAKE_SOURCE_DIR}/VERSION.txt)
+
+project(NeurolingsCE VERSION ${PROJECT_VERSION} LANGUAGES C CXX)
 
 if(MSVC)
   # This project expects a 64-bit Qt when using Qt's msvc2022_64 kit.
@@ -165,13 +155,13 @@ if(WIN32)
 endif()
 option(SHIJIMA_WITH_SHIMEJIFINDER "Enable archive import support" ${_SHIJIMA_WITH_SHIMEJIFINDER_DEFAULT})
 
-add_executable(${APP_NAME})
+add_executable(NeurolingsCE)
 
 if(MSVC)
-  set_property(TARGET ${APP_NAME} PROPERTY MSVC_RUNTIME_LIBRARY "${_shijima_msvc_runtime}")
+  set_property(TARGET NeurolingsCE PROPERTY MSVC_RUNTIME_LIBRARY "${_shijima_msvc_runtime}")
 endif()
 
-target_sources(${APP_NAME} PRIVATE
+target_sources(NeurolingsCE PRIVATE
   src/app/main.cc
   src/app/Asset.cc
   src/app/MascotData.cc
@@ -256,7 +246,7 @@ if(SHIJIMA_WITH_LICENSES_TEXT)
 
   set_source_files_properties("${_shijima_licenses_header}" PROPERTIES GENERATED TRUE)
   target_include_directories(NeurolingsCE PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
-  
+
   # Create a custom target to ensure licenses are generated before autogen runs
   add_custom_target(shijima_licenses_generated DEPENDS "${_shijima_licenses_header}")
   add_dependencies(NeurolingsCE shijima_licenses_generated)
@@ -280,20 +270,20 @@ elseif(APPLE)
     src/platform/Platform/macOS/PrivateActiveWindowObserver.hpp
   )
 elseif(UNIX)
-  set(LINUX_TARGET ${APP_NAME})
+  set(LINUX_TARGET NeurolingsCE)
   set(LINUX_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
   set(LINUX_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
   set(BIN2CPP_CMAKE_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/cmake/bin2cpp.cmake)
   include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/LinuxPlatform.cmake)
 
   # AppImage packaging target (cmake appimage)
-  set(APPIMAGE_TARGET      ${APP_NAME})
+  set(APPIMAGE_TARGET      NeurolingsCE)
   set(APPIMAGE_SOURCE_DIR  ${CMAKE_CURRENT_SOURCE_DIR})
   set(APPIMAGE_BINARY_DIR  ${CMAKE_CURRENT_BINARY_DIR})
   include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/AppImage.cmake)
 endif()
 
-target_include_directories(${APP_NAME} PRIVATE
+target_include_directories(NeurolingsCE PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_CURRENT_SOURCE_DIR}/include
   ${CMAKE_CURRENT_SOURCE_DIR}/src/platform
@@ -303,18 +293,15 @@ target_include_directories(${APP_NAME} PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/miniz
 )
 
-target_compile_definitions(${APP_NAME} PRIVATE
+target_compile_definitions(NeurolingsCE PRIVATE
   NEUROLINGSCE_VERSION="${PROJECT_VERSION}"
-  APP_NAME="${APP_NAME}"
-  APP_DISPLAY_NAME="${APP_DISPLAY_NAME}"
-  APP_EXECUTABLE="${APP_EXECUTABLE}"
   $<$<BOOL:${SHIJIMA_USE_QTMULTIMEDIA}>:SHIJIMA_USE_QTMULTIMEDIA=1>
   $<$<NOT:$<BOOL:${SHIJIMA_USE_QTMULTIMEDIA}>>:SHIJIMA_USE_QTMULTIMEDIA=0>
   $<$<BOOL:${SHIJIMA_WITH_SHIMEJIFINDER}>:SHIJIMA_WITH_SHIMEJIFINDER=1>
   $<$<NOT:$<BOOL:${SHIJIMA_WITH_SHIMEJIFINDER}>>:SHIJIMA_WITH_SHIMEJIFINDER=0>
 )
 
-target_link_libraries(${APP_NAME} PRIVATE
+target_link_libraries(NeurolingsCE PRIVATE
   Qt6::Core
   Qt6::Gui
   Qt6::Widgets
@@ -353,30 +340,30 @@ target_link_libraries(NeurolingsCE PRIVATE ElaWidgetTools)
 target_compile_definitions(NeurolingsCE PRIVATE ELAWIDGETTOOLS_LIBRARY=0)
 
 # miniz (lightweight ZIP library for SimpleZipImporter, always built)
-target_sources(${APP_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/miniz/miniz.c)
+target_sources(NeurolingsCE PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/miniz/miniz.c)
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/miniz/miniz.c PROPERTIES LANGUAGE C)
 
 if(SHIJIMA_WITH_SHIMEJIFINDER)
   if(SHIJIMA_WITH_LIBSHIMEJIFINDER)
-    target_link_libraries(${APP_NAME} PRIVATE shimejifinder)
-    target_compile_definitions(${APP_NAME} PRIVATE SHIMEJIFINDER_NO_LIBARCHIVE=0 SHIMEJIFINDER_NO_LIBUNARR=0)
+    target_link_libraries(NeurolingsCE PRIVATE shimejifinder)
+    target_compile_definitions(NeurolingsCE PRIVATE SHIMEJIFINDER_NO_LIBARCHIVE=0 SHIMEJIFINDER_NO_LIBUNARR=0)
   else()
     message(FATAL_ERROR "SHIJIMA_WITH_SHIMEJIFINDER=ON requires SHIJIMA_WITH_LIBSHIMEJIFINDER=ON for now.")
   endif()
 else()
-  target_compile_definitions(${APP_NAME} PRIVATE
+  target_compile_definitions(NeurolingsCE PRIVATE
     SHIMEJIFINDER_NO_LIBARCHIVE=1
     SHIMEJIFINDER_NO_LIBUNARR=1
   )
 endif()
 
 if(SHIJIMA_USE_QTMULTIMEDIA)
-  target_link_libraries(${APP_NAME} PRIVATE Qt6::Multimedia)
+  target_link_libraries(NeurolingsCE PRIVATE Qt6::Multimedia)
 endif()
 
 if(WIN32)
-  target_compile_definitions(${APP_NAME} PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN)
-  set_target_properties(${APP_NAME} PROPERTIES WIN32_EXECUTABLE TRUE)
+  target_compile_definitions(NeurolingsCE PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN)
+  set_target_properties(NeurolingsCE PROPERTIES WIN32_EXECUTABLE TRUE)
 endif()
 
 # On Windows, use windeployqt to deploy the Qt runtime in release builds.
@@ -398,17 +385,17 @@ if(WIN32)
     endif()
 
     if(QT_WINDEPLOYQT_EXECUTABLE)
-      add_custom_command(TARGET ${APP_NAME} POST_BUILD
+      add_custom_command(TARGET NeurolingsCE POST_BUILD
         COMMAND "${QT_WINDEPLOYQT_EXECUTABLE}"
                 --no-translations
                 --no-system-d3d-compiler
-                "$<TARGET_FILE:${APP_NAME}>"
-        WORKING_DIRECTORY "$<TARGET_FILE_DIR:${APP_NAME}>"
+                "$<TARGET_FILE:NeurolingsCE>"
+        WORKING_DIRECTORY "$<TARGET_FILE_DIR:NeurolingsCE>"
         VERBATIM
       )
       message(STATUS "Release build: adding post-build command windeployqt to deploy Qt runtime.")
     else()
-      message(WARNING "windeployqt not found; ${APP_NAME}.exe may fail to start outside of a Qt environment (missing Qt6Guid.dll).")
+      message(WARNING "windeployqt not found; NeurolingsCE.exe may fail to start outside of a Qt environment (missing Qt6Guid.dll).")
     endif()
   else()
     message(STATUS "Non-release build: skipping windeployqt.")
@@ -419,8 +406,8 @@ endif()
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
   message(STATUS "Release build: adding post-build command to strip binary")
   add_custom_command(
-      TARGET ${APP_NAME} POST_BUILD
-      COMMAND ${CMAKE_STRIP} $<TARGET_FILE:${APP_NAME}>
+      TARGET NeurolingsCE POST_BUILD
+      COMMAND ${CMAKE_STRIP} $<TARGET_FILE:NeurolingsCE>
       COMMENT "Stripping binary"
   )
 else()
@@ -431,72 +418,52 @@ endif()
 set(METAINFO_TEMPLATE "${CMAKE_CURRENT_SOURCE_DIR}/src/packaging/io.github.qingchenyouforcc.NeurolingsCE.metainfo.xml.in")
 set(METAINFO_OUTPUT "${CMAKE_CURRENT_SOURCE_DIR}/src/packaging/io.github.qingchenyouforcc.NeurolingsCE.metainfo.xml")
 
-add_custom_command(
-  OUTPUT "${METAINFO_OUTPUT}"
-  COMMAND ${CMAKE_COMMAND}
-    -DINPUT_FILE=${METAINFO_TEMPLATE}
-    -DOUTPUT_FILE=${METAINFO_OUTPUT}
-    -DVERSION=${NEUROLINGSCE_VERSION}
-    -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/ConfigureFile.cmake"
-  DEPENDS "${METAINFO_TEMPLATE}" "${CMAKE_CURRENT_SOURCE_DIR}/VERSION.txt"
-  COMMENT "Generating metainfo.xml"
-  VERBATIM
+
+configure_file(
+  ${METAINFO_TEMPLATE}
+  ${METAINFO_OUTPUT}
+  @ONLY
 )
 
 add_custom_target(generate_metainfo ALL DEPENDS "${METAINFO_OUTPUT}")
-add_dependencies(${APP_NAME} generate_metainfo)
+add_dependencies(NeurolingsCE generate_metainfo)
 
 
 # Generate resources.rc from template (Windows)
 set(RESOURCES_RC_TEMPLATE "${CMAKE_CURRENT_SOURCE_DIR}/src/resources/resources.rc.in")
 set(RESOURCES_RC_OUTPUT "${CMAKE_CURRENT_SOURCE_DIR}/src/resources/resources.rc")
 
-add_custom_command(
-  OUTPUT "${RESOURCES_RC_OUTPUT}"
-  COMMAND ${CMAKE_COMMAND}
-    -DINPUT_FILE=${RESOURCES_RC_TEMPLATE}
-    -DOUTPUT_FILE=${RESOURCES_RC_OUTPUT}
-    -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/ConfigureFile.cmake"
-  DEPENDS "${RESOURCES_RC_TEMPLATE}" "${CMAKE_CURRENT_SOURCE_DIR}/VERSION.txt"
-  COMMENT "Generating resources.rc"
-  VERBATIM
+configure_file(
+  ${RESOURCES_RC_TEMPLATE}
+  ${RESOURCES_RC_OUTPUT}
+  @ONLY
 )
 
 add_custom_target(generate_resources_rc ALL DEPENDS "${RESOURCES_RC_OUTPUT}")
-add_dependencies(${APP_NAME} generate_resources_rc)
+add_dependencies(NeurolingsCE generate_resources_rc)
 
 # Generate Info.plist from template (macOS)
 set(INFO_PLIST_TEMPLATE "${CMAKE_CURRENT_SOURCE_DIR}/src/packaging/NeurolingsCE.app/Contents/Info.plist.in")
 set(INFO_PLIST_OUTPUT "${CMAKE_CURRENT_SOURCE_DIR}/src/packaging/NeurolingsCE.app/Contents/Info.plist")
 
-add_custom_command(
-  OUTPUT "${INFO_PLIST_OUTPUT}"
-  COMMAND ${CMAKE_COMMAND}
-    -DINPUT_FILE=${INFO_PLIST_TEMPLATE}
-    -DOUTPUT_FILE=${INFO_PLIST_OUTPUT}
-    -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/ConfigureFile.cmake"
-  DEPENDS "${INFO_PLIST_TEMPLATE}" "${CMAKE_CURRENT_SOURCE_DIR}/VERSION.txt"
-  COMMENT "Generating Info.plist"
-  VERBATIM
+configure_file(
+  ${INFO_PLIST_TEMPLATE}
+  ${INFO_PLIST_OUTPUT}
+  @ONLY
 )
 
 add_custom_target(generate_info_plist ALL DEPENDS "${INFO_PLIST_OUTPUT}")
-add_dependencies(${APP_NAME} generate_info_plist)
+add_dependencies(NeurolingsCE generate_info_plist)
 
 # Generate GNOME extension metadata.json from template (Linux)
 set(GNOME_METADATA_TEMPLATE "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/Platform/Linux/gnome_script/metadata.json.in")
 set(GNOME_METADATA_OUTPUT "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/Platform/Linux/gnome_script/metadata.json")
 
-add_custom_command(
-  OUTPUT "${GNOME_METADATA_OUTPUT}"
-  COMMAND ${CMAKE_COMMAND}
-    -DINPUT_FILE=${GNOME_METADATA_TEMPLATE}
-    -DOUTPUT_FILE=${GNOME_METADATA_OUTPUT}
-    -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/ConfigureFile.cmake"
-  DEPENDS "${GNOME_METADATA_TEMPLATE}" "${CMAKE_CURRENT_SOURCE_DIR}/VERSION.txt"
-  COMMENT "Generating GNOME extension metadata.json"
-  VERBATIM
+configure_file(
+  ${GNOME_METADATA_TEMPLATE}
+  ${GNOME_METADATA_OUTPUT}
+  @ONLY
 )
 
 add_custom_target(generate_gnome_metadata ALL DEPENDS "${GNOME_METADATA_OUTPUT}")
-add_dependencies(${APP_NAME} generate_gnome_metadata)
+add_dependencies(NeurolingsCE generate_gnome_metadata)

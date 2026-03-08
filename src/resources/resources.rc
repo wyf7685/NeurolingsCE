@@ -7,13 +7,13 @@ BEGIN
   BEGIN
     BLOCK "080904E4"
     BEGIN
-      VALUE "CompanyName", "qingchenyou"
-      VALUE "FileDescription", "NeurolingsCE"
+      VALUE "CompanyName", ""
+      VALUE "FileDescription", ""
       VALUE "FileVersion", "0.2.0"
-      VALUE "InternalName", "NeurolingsCE"
-      VALUE "LegalCopyright", "Copyright (c) - qingchenyou"
-      VALUE "OriginalFilename", "NeurolingsCE.exe"
-      VALUE "ProductName", "NeurolingsCE"
+      VALUE "InternalName", ""
+      VALUE "LegalCopyright", ""
+      VALUE "OriginalFilename", ".exe"
+      VALUE "ProductName", ""
       VALUE "ProductVersion", "0.2.0"
     END
   END
