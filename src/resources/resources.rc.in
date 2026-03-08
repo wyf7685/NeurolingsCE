@@ -1,4 +1,4 @@
-id ICON "..\\packaging\\neurolingsce.ico"
+id ICON "../packaging/neurolingsce.ico"
 1 VERSIONINFO
 FILEVERSION     @VERSION_MAJOR@,@VERSION_MINOR@,@VERSION_PATCH@,0
 PRODUCTVERSION  @VERSION_MAJOR@,@VERSION_MINOR@,@VERSION_PATCH@,0

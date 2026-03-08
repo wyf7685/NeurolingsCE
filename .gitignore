@@ -7,6 +7,7 @@
 # Build directories
 # -----------------------------------------------------------------------------
 build/
+build-*/
 Build/
 cmake-build-*/
 out/
@@ -181,5 +182,7 @@ libshijima/build/
 libshimejifinder/build/
 /nul
 /src/platform/Platform/AGENTS.md
+/src/platform/Platform/Linux/gnome_script.c
+/src/platform/Platform/Linux/kwin_script.c
 /build_test.bat
 /build_output.txt

@@ -1,6 +1,8 @@
 # ConfigureFile.cmake - Substitute @VAR@ variables in a template file
 # Usage: cmake -DINPUT_FILE=<in> -DOUTPUT_FILE=<out> -DVERSION=<ver> -P ConfigureFile.cmake
 
+cmake_policy(SET CMP0053 OLD)
+
 file(READ "${INPUT_FILE}" FILE_CONTENT)
 
 # Get version components from VERSION.txt if not provided

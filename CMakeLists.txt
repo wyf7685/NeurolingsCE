@@ -23,6 +23,8 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+
 if(NOT DEFINED CMAKE_PREFIX_PATH AND DEFINED ENV{QTDIR})
   # Allow Qt to be provided via environment (common with Qt installs / dev shells).
   set(CMAKE_PREFIX_PATH "$ENV{QTDIR}" CACHE PATH "Qt install prefix" FORCE)
@@ -38,13 +40,31 @@ find_package(Qt6 QUIET COMPONENTS Core Gui Widgets Concurrent LinguistTools)
 if(NOT Qt6_FOUND)
   message(FATAL_ERROR
     "Qt6 not found. Set one of the following and reconfigure:\n"
-    "  - Qt6_DIR=D:/Qt/6.8.3/msvc2022_64/lib/cmake/Qt6\n"
-    "  - CMAKE_PREFIX_PATH=D:/Qt/6.8.3/msvc2022_64\n"
-    "  - or set environment variable QTDIR to your Qt prefix (e.g. D:/Qt/6.8.3/msvc2022_64)\n"
+    "  - Qt6_DIR=D:/Qt/6.8.2/mingw_64/lib/cmake/Qt6          (MinGW)\n"
+    "  - Qt6_DIR=D:/Qt/6.8.2/msvc2022_64/lib/cmake/Qt6       (MSVC)\n"
+    "  - CMAKE_PREFIX_PATH=D:/Qt/6.8.2/mingw_64              (MinGW)\n"
+    "  - CMAKE_PREFIX_PATH=D:/Qt/6.8.2/msvc2022_64           (MSVC)\n"
+    "  - or set environment variable QTDIR to your Qt prefix\n"
+    "Note: When using MinGW, use the compiler bundled with Qt\n"
+    "  (e.g. D:/Qt/Tools/mingw1310_64/bin/g++.exe) to avoid GCC runtime mismatches.\n"
   )
 endif()
 message(STATUS "Using Qt6 from: ${Qt6_DIR}")
 message(STATUS "Qt6 version: ${Qt6_VERSION}")
+
+if(NOT TARGET Qt6::WidgetsPrivate)  # hack for ElaWidgetTools/ElaWidgetTools/CmakeLists.txt
+  message(STATUS "Qt6WidgetsPrivate not provided by Qt SDK, creating fallback target")
+  add_library(Qt6::WidgetsPrivate INTERFACE IMPORTED)
+  target_link_libraries(Qt6::WidgetsPrivate
+    INTERFACE
+    Qt6::Widgets
+  )
+  target_include_directories(Qt6::WidgetsPrivate
+    INTERFACE
+    ${Qt6Widgets_INCLUDE_DIRS}
+    ${Qt6Widgets_INCLUDE_DIRS}/QtWidgets/private
+  )
+endif()
 
 function(_shijima_print_qt_target_locations tgt)
   if(NOT TARGET ${tgt})
@@ -80,6 +100,12 @@ if(SHIJIMA_USE_QTMULTIMEDIA)
   endif()
 endif()
 
+if(UNIX AND NOT APPLE)
+  # Linux platform layer uses Qt DBus for GNOME/KDE window tracking.
+  find_package(Qt6 COMPONENTS DBus REQUIRED)
+  _shijima_print_qt_target_locations(Qt6::DBus)
+endif()
+
 # Dependencies
 add_subdirectory(libshijima)
 
@@ -101,13 +127,20 @@ if(MSVC AND TARGET ElaWidgetTools)
   set_property(TARGET ElaWidgetTools PROPERTY MSVC_RUNTIME_LIBRARY "${_shijima_msvc_runtime}")
 endif()
 
-# libshimejifinder's upstream CMake uses bash scripts and Unix headers in some files.
-# For MSVC builds we build it as an external dependency later, or you can use a
-# prebuilt libshimejifinder and point CMake to it.
+# libshimejifinder's upstream CMakeLists.txt relies on a bash script (bin2cpp.sh)
+# which cannot run on Windows natively. This project instead routes through
+# cmake/libshimejifinder/CMakeLists.txt, which replaces the script with a pure
+# CMake implementation (cmake/bin2cpp.cmake) and targets archive_static rather
+# than the shared-only 'archive' target, making it fully cross-platform.
+# NOTE: When building on Windows with MinGW, use the compiler bundled with Qt
+# (e.g. D:/Qt/Tools/mingw1310_64) to avoid GCC runtime version mismatches.
 option(SHIJIMA_WITH_LIBSHIMEJIFINDER "Build with bundled libshimejifinder" OFF)
 
 if(SHIJIMA_WITH_LIBSHIMEJIFINDER)
-  add_subdirectory(libshimejifinder)
+  set(LIBSHIMEJIFINDER_SOURCE_DIR ${CMAKE_SOURCE_DIR}/libshimejifinder)
+  set(LIBSHIMEJIFINDER_BIN_DIR ${CMAKE_CURRENT_BINARY_DIR}/libshimejifinder)
+  set(BIN2CPP_CMAKE_SCRIPT ${CMAKE_SOURCE_DIR}/cmake/bin2cpp.cmake)
+  add_subdirectory(${CMAKE_SOURCE_DIR}/cmake/libshimejifinder)
 endif()
 
 option(SHIJIMA_WITH_DEFAULT_MASCOT "Embed DefaultMascot assets" ON)
@@ -117,8 +150,10 @@ set(_shijima_generated_dir "${CMAKE_CURRENT_BINARY_DIR}")
 set(_shijima_licenses_header "${_shijima_generated_dir}/licenses_generated.hpp")
 
 set(_SHIJIMA_WITH_SHIMEJIFINDER_DEFAULT ON)
-if(MSVC)
-  # libshimejifinder depends on nested submodules and Unix tooling; keep it off by default on MSVC.
+if(WIN32)
+  # Keep shimejifinder (archive import UI) off by default on Windows.
+  # To enable it, also pass -DSHIJIMA_WITH_LIBSHIMEJIFINDER=ON and ensure
+  # you are using the Qt-bundled MinGW toolchain (see note above).
   set(_SHIJIMA_WITH_SHIMEJIFINDER_DEFAULT OFF)
 endif()
 option(SHIJIMA_WITH_SHIMEJIFINDER "Enable archive import support" ${_SHIJIMA_WITH_SHIMEJIFINDER_DEFAULT})
@@ -179,10 +214,8 @@ if(SHIJIMA_WITH_DEFAULT_MASCOT)
       "${CMAKE_CURRENT_SOURCE_DIR}/cmake/BundleDefaultMascot.cmake"
       ${_default_mascot_files}
     VERBATIM
+    COMMENT "Generating DefaultMascot.cc from bundled mascot assets"
   )
-
-  add_custom_target(shijima_default_mascot_generated DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/DefaultMascot.cc")
-  add_dependencies(NeurolingsCE shijima_default_mascot_generated)
 
   set_source_files_properties("${CMAKE_CURRENT_BINARY_DIR}/DefaultMascot.cc" PROPERTIES GENERATED TRUE)
   target_sources(NeurolingsCE PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/DefaultMascot.cc")
@@ -211,17 +244,18 @@ if(SHIJIMA_WITH_LICENSES_TEXT)
       ${CMAKE_CURRENT_SOURCE_DIR}/licenses/Qt.LICENSE.txt
       ${CMAKE_CURRENT_SOURCE_DIR}/licenses/rapidxml.LICENSE.txt
     VERBATIM
+    COMMENT "Generating licenses_generated.hpp from license files"
   )
 
+  set_source_files_properties("${_shijima_licenses_header}" PROPERTIES GENERATED TRUE)
+  target_include_directories(NeurolingsCE PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+  
+  # Create a custom target to ensure licenses are generated before autogen runs
   add_custom_target(shijima_licenses_generated DEPENDS "${_shijima_licenses_header}")
   add_dependencies(NeurolingsCE shijima_licenses_generated)
-  target_include_directories(NeurolingsCE PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 else()
   message(FATAL_ERROR "SHIJIMA_WITH_LICENSES_TEXT=OFF is not supported yet (licenses_generated.hpp is required).")
 endif()
-
-# Ensure the generated header exists before compiling the file that includes it.
-set_source_files_properties(src/app/ShijimaLicensesDialog.cc PROPERTIES OBJECT_DEPENDS "${_shijima_licenses_header}")
 
 if(WIN32)
   target_sources(NeurolingsCE PRIVATE
@@ -239,18 +273,17 @@ elseif(APPLE)
     src/platform/Platform/macOS/PrivateActiveWindowObserver.hpp
   )
 elseif(UNIX)
-  target_sources(NeurolingsCE PRIVATE
-    src/platform/Platform/Linux/Platform.cc
-    src/platform/Platform/Linux/ActiveWindowObserver.cc
-    src/platform/Platform/Linux/PrivateActiveWindowObserver.cc
-    src/platform/Platform/Linux/PrivateActiveWindowObserver.hpp
-    src/platform/Platform/Linux/KWin.cc
-    src/platform/Platform/Linux/KDEWindowObserverBackend.cc
-    src/platform/Platform/Linux/GNOME.cc
-    src/platform/Platform/Linux/GNOMEWindowObserverBackend.cc
-    src/platform/Platform/Linux/DBus.cc
-    src/platform/Platform/Linux/ExtensionFile.cc
-  )
+  set(LINUX_TARGET NeurolingsCE)
+  set(LINUX_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+  set(LINUX_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
+  set(BIN2CPP_CMAKE_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/cmake/bin2cpp.cmake)
+  include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/LinuxPlatform.cmake)
+
+  # AppImage packaging target (cmake appimage)
+  set(APPIMAGE_TARGET      NeurolingsCE)
+  set(APPIMAGE_SOURCE_DIR  ${CMAKE_CURRENT_SOURCE_DIR})
+  set(APPIMAGE_BINARY_DIR  ${CMAKE_CURRENT_BINARY_DIR})
+  include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/AppImage.cmake)
 endif()
 
 target_include_directories(NeurolingsCE PRIVATE
@@ -306,37 +339,8 @@ if(MSVC)
     "PATH=$<TARGET_FILE_DIR:Qt6::Core>\;%PATH%")
 endif()
 
-# Also deploy Qt runtime next to the built executable so it can be run directly
-# from the build output folder (and from VS) without requiring PATH tweaks.
-if(WIN32)
-  get_target_property(_qt_core_location Qt6::Core IMPORTED_LOCATION_$<UPPER_CASE:$<CONFIG>>)
-  if(NOT _qt_core_location)
-    get_target_property(_qt_core_location Qt6::Core IMPORTED_LOCATION_RELEASE)
-  endif()
-  if(NOT _qt_core_location)
-    get_target_property(_qt_core_location Qt6::Core IMPORTED_LOCATION)
-  endif()
-
-  if(_qt_core_location)
-    get_filename_component(_qt_bin_dir "${_qt_core_location}" DIRECTORY)
-    find_program(QT_WINDEPLOYQT_EXECUTABLE windeployqt HINTS "${_qt_bin_dir}")
-  else()
-    find_program(QT_WINDEPLOYQT_EXECUTABLE windeployqt)
-  endif()
-
-  if(QT_WINDEPLOYQT_EXECUTABLE)
-    add_custom_command(TARGET NeurolingsCE POST_BUILD
-      COMMAND "${QT_WINDEPLOYQT_EXECUTABLE}"
-              --no-translations
-              --no-system-d3d-compiler
-              "$<TARGET_FILE:NeurolingsCE>"
-      WORKING_DIRECTORY "$<TARGET_FILE_DIR:NeurolingsCE>"
-      VERBATIM
-    )
-  else()
-    message(WARNING "windeployqt not found; NeurolingsCE.exe may fail to start outside of a Qt environment (missing Qt6Guid.dll).")
-  endif()
-endif()
+target_link_libraries(NeurolingsCE PRIVATE ElaWidgetTools)
+target_compile_definitions(NeurolingsCE PRIVATE ELAWIDGETTOOLS_LIBRARY=0)
 
 # miniz (lightweight ZIP library for SimpleZipImporter, always built)
 target_sources(NeurolingsCE PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/miniz/miniz.c)
@@ -365,39 +369,53 @@ if(WIN32)
   set_target_properties(NeurolingsCE PROPERTIES WIN32_EXECUTABLE TRUE)
 endif()
 
-# Deploy Qt runtime DLLs next to the executable on Windows.
-# This fixes runtime errors like missing Qt6Guid.dll when running NeurolingsCE.exe
-# outside of Visual Studio (e.g., from the build/install folder).
+# On Windows, use windeployqt to deploy the Qt runtime in release builds.
 if(WIN32)
-  get_target_property(_qt_core_location Qt6::Core IMPORTED_LOCATION_RELEASE)
-  if(NOT _qt_core_location)
-    get_target_property(_qt_core_location Qt6::Core IMPORTED_LOCATION)
-  endif()
+  if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    get_target_property(_qt_core_location Qt6::Core IMPORTED_LOCATION_$<UPPER_CASE:$<CONFIG>>)
+    if(NOT _qt_core_location)
+      get_target_property(_qt_core_location Qt6::Core IMPORTED_LOCATION_RELEASE)
+    endif()
+    if(NOT _qt_core_location)
+      get_target_property(_qt_core_location Qt6::Core IMPORTED_LOCATION)
+    endif()
 
-  if(_qt_core_location)
-    get_filename_component(_qt_bin_dir "${_qt_core_location}" DIRECTORY)
-    find_program(QT_WINDEPLOYQT_EXECUTABLE windeployqt HINTS "${_qt_bin_dir}")
-  else()
-    find_program(QT_WINDEPLOYQT_EXECUTABLE windeployqt)
-  endif()
+    if(_qt_core_location)
+      get_filename_component(_qt_bin_dir "${_qt_core_location}" DIRECTORY)
+      find_program(QT_WINDEPLOYQT_EXECUTABLE windeployqt HINTS "${_qt_bin_dir}")
+    else()
+      find_program(QT_WINDEPLOYQT_EXECUTABLE windeployqt)
+    endif()
 
-  if(QT_WINDEPLOYQT_EXECUTABLE)
-    install(TARGETS NeurolingsCE RUNTIME DESTINATION .)
-    install(CODE [[
-      execute_process(
+    if(QT_WINDEPLOYQT_EXECUTABLE)
+      add_custom_command(TARGET NeurolingsCE POST_BUILD
         COMMAND "${QT_WINDEPLOYQT_EXECUTABLE}"
                 --no-translations
                 --no-system-d3d-compiler
                 "$<TARGET_FILE:NeurolingsCE>"
-        WORKING_DIRECTORY "${CMAKE_INSTALL_PREFIX}"
-        COMMAND_ERROR_IS_FATAL ANY
+        WORKING_DIRECTORY "$<TARGET_FILE_DIR:NeurolingsCE>"
+        VERBATIM
       )
-    ]])
+      message(STATUS "Release build: adding post-build command windeployqt to deploy Qt runtime.")
+    else()
+      message(WARNING "windeployqt not found; NeurolingsCE.exe may fail to start outside of a Qt environment (missing Qt6Guid.dll).")
+    endif()
   else()
-    message(WARNING "windeployqt not found; Qt runtime DLLs will not be deployed during install. Install Qt and ensure windeployqt is on PATH.")
+    message(STATUS "Non-release build: skipping windeployqt.")
   endif()
 endif()
 
+# On Release builds, strip the binary to reduce size.
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+  message(STATUS "Release build: adding post-build command to strip binary")
+  add_custom_command(
+      TARGET NeurolingsCE POST_BUILD
+      COMMAND ${CMAKE_STRIP} $<TARGET_FILE:NeurolingsCE>
+      COMMENT "Stripping binary"
+  )
+else()
+  message(STATUS "Non-release build: skipping binary stripping")
+endif()
 
 # Generate metainfo.xml from template with version substitution
 set(METAINFO_TEMPLATE "${CMAKE_CURRENT_SOURCE_DIR}/src/packaging/io.github.qingchenyouforcc.NeurolingsCE.metainfo.xml.in")
