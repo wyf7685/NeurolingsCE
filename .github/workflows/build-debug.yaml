@@ -218,7 +218,7 @@ jobs:
           export CXXFLAGS="$CXXFLAGS -I$QT_DIR/include/QtCore/6.8.2 -I$QT_DIR/include/QtCore/6.8.2/QtCore -I$QT_DIR/include/QtWidgets/6.8.2 -I$QT_DIR/include/QtWidgets/6.8.2/QtWidgets"
           echo "::group::Building main application"
           # Use -j2 instead of -j4 to avoid resource exhaustion
-          time make -j2 shijima-qt
+          time make -j2 publish/Linux/debug
           echo "::endgroup::"
           echo ""
           echo "ccache stats after build:"
