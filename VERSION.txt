@@ -18,7 +18,7 @@ RELEASE_DATE=2026-03-08
 APP_NAME=NeurolingsCE
 APP_DISPLAY_NAME=NeurolingsCE[Shijima-Qt Edition]
 APP_EXECUTABLE=NeurolingsCE
-APP_DESCRIPTION=Shimeji desktop pet runner
+APP_DESCRIPTION=NeurolingsCE - Shimeji desktop pet runner
 APP_COMPANY=qingchenyou
 APP_COPYRIGHT=Copyright (c) - qingchenyou
 
