@@ -108,6 +108,8 @@ add_subdirectory(libshijima)
 
 if(MSVC AND TARGET shijima)
   set_property(TARGET shijima PROPERTY MSVC_RUNTIME_LIBRARY "${_shijima_msvc_runtime}")
+  # Handle UTF-8 source files in libshijima (contains Unicode characters)
+  target_compile_options(shijima PRIVATE /utf-8)
 endif()
 
 # ElaWidgetTools (Fluent Design UI components)
@@ -123,6 +125,10 @@ add_subdirectory(ElaWidgetTools/ElaWidgetTools)
 if(MSVC AND TARGET ElaWidgetTools)
   set_property(TARGET ElaWidgetTools PROPERTY MSVC_RUNTIME_LIBRARY "${_shijima_msvc_runtime}")
 endif()
+target_compile_options(ElaWidgetTools PRIVATE
+    $<$<CXX_COMPILER_ID:GNU,Clang>:-w>
+    $<$<CXX_COMPILER_ID:MSVC>:/W0>
+)
 
 # libshimejifinder's upstream CMakeLists.txt relies on a bash script (bin2cpp.sh)
 # which cannot run on Windows natively. This project instead routes through
@@ -131,12 +137,14 @@ endif()
 # than the shared-only 'archive' target, making it fully cross-platform.
 # NOTE: When building on Windows with MinGW, use the compiler bundled with Qt
 # (e.g. D:/Qt/Tools/mingw1310_64) to avoid GCC runtime version mismatches.
-option(SHIJIMA_WITH_LIBSHIMEJIFINDER "Build with bundled libshimejifinder" OFF)
+option(SHIJIMA_WITH_LIBSHIMEJIFINDER "Build with bundled libshimejifinder" ON)
 
 if(SHIJIMA_WITH_LIBSHIMEJIFINDER)
   set(LIBSHIMEJIFINDER_SOURCE_DIR ${CMAKE_SOURCE_DIR}/libshimejifinder)
   set(LIBSHIMEJIFINDER_BIN_DIR ${CMAKE_CURRENT_BINARY_DIR}/libshimejifinder)
   set(BIN2CPP_CMAKE_SCRIPT ${CMAKE_SOURCE_DIR}/cmake/bin2cpp.cmake)
+  set(SHIMEJIFINDER_USE_LIBARCHIVE OFF)
+  set(SHIMEJIFINDER_USE_LIBUNARR ON)
   add_subdirectory(${CMAKE_SOURCE_DIR}/cmake/libshimejifinder)
 endif()
 
@@ -146,14 +154,7 @@ option(SHIJIMA_WITH_LICENSES_TEXT "Embed licenses text" ON)
 set(_shijima_generated_dir "${CMAKE_CURRENT_BINARY_DIR}")
 set(_shijima_licenses_header "${_shijima_generated_dir}/licenses_generated.hpp")
 
-set(_SHIJIMA_WITH_SHIMEJIFINDER_DEFAULT ON)
-if(WIN32)
-  # Keep shimejifinder (archive import UI) off by default on Windows.
-  # To enable it, also pass -DSHIJIMA_WITH_LIBSHIMEJIFINDER=ON and ensure
-  # you are using the Qt-bundled MinGW toolchain (see note above).
-  set(_SHIJIMA_WITH_SHIMEJIFINDER_DEFAULT OFF)
-endif()
-option(SHIJIMA_WITH_SHIMEJIFINDER "Enable archive import support" ${_SHIJIMA_WITH_SHIMEJIFINDER_DEFAULT})
+option(SHIJIMA_WITH_SHIMEJIFINDER "Enable archive import support" ON)
 
 add_executable(NeurolingsCE)
 
@@ -347,15 +348,20 @@ set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/miniz/miniz.c PROPERTIES
 if(SHIJIMA_WITH_SHIMEJIFINDER)
   if(SHIJIMA_WITH_LIBSHIMEJIFINDER)
     target_link_libraries(NeurolingsCE PRIVATE shimejifinder)
-    target_compile_definitions(NeurolingsCE PRIVATE SHIMEJIFINDER_NO_LIBARCHIVE=0 SHIMEJIFINDER_NO_LIBUNARR=0)
+    # target_compile_definitions(NeurolingsCE PRIVATE
+    #   SHIMEJIFINDER_NO_LIBARCHIVE=0
+    #   # SHIMEJIFINDER_NO_LIBUNARR=0
+    # )
+    message(STATUS "Building with bundled libshimejifinder (archive import support enabled).")
   else()
     message(FATAL_ERROR "SHIJIMA_WITH_SHIMEJIFINDER=ON requires SHIJIMA_WITH_LIBSHIMEJIFINDER=ON for now.")
   endif()
 else()
-  target_compile_definitions(NeurolingsCE PRIVATE
-    SHIMEJIFINDER_NO_LIBARCHIVE=1
-    SHIMEJIFINDER_NO_LIBUNARR=1
-  )
+  # target_compile_definitions(NeurolingsCE PRIVATE
+  #   SHIMEJIFINDER_NO_LIBARCHIVE=1
+  #   # SHIMEJIFINDER_NO_LIBUNARR=1
+  # )
+  message(STATUS "Archive import support disabled (SHIJIMA_WITH_SHIMEJIFINDER=OFF).")
 endif()
 
 if(SHIJIMA_USE_QTMULTIMEDIA)
@@ -369,102 +375,66 @@ endif()
 
 # On Windows, use windeployqt to deploy the Qt runtime in release builds.
 if(WIN32)
-  if(CMAKE_BUILD_TYPE STREQUAL "Release")
-    get_target_property(_qt_core_location Qt6::Core IMPORTED_LOCATION_$<UPPER_CASE:$<CONFIG>>)
-    if(NOT _qt_core_location)
-      get_target_property(_qt_core_location Qt6::Core IMPORTED_LOCATION_RELEASE)
-    endif()
-    if(NOT _qt_core_location)
-      get_target_property(_qt_core_location Qt6::Core IMPORTED_LOCATION)
-    endif()
+  get_target_property(_qt_core_location Qt6::Core IMPORTED_LOCATION_$<UPPER_CASE:$<CONFIG>>)
+  if(NOT _qt_core_location)
+    get_target_property(_qt_core_location Qt6::Core IMPORTED_LOCATION_RELEASE)
+  endif()
+  if(NOT _qt_core_location)
+    get_target_property(_qt_core_location Qt6::Core IMPORTED_LOCATION)
+  endif()
 
-    if(_qt_core_location)
-      get_filename_component(_qt_bin_dir "${_qt_core_location}" DIRECTORY)
-      find_program(QT_WINDEPLOYQT_EXECUTABLE windeployqt HINTS "${_qt_bin_dir}")
-    else()
-      find_program(QT_WINDEPLOYQT_EXECUTABLE windeployqt)
-    endif()
-
-    if(QT_WINDEPLOYQT_EXECUTABLE)
-      add_custom_command(TARGET NeurolingsCE POST_BUILD
-        COMMAND "${QT_WINDEPLOYQT_EXECUTABLE}"
-                --no-translations
-                --no-system-d3d-compiler
-                "$<TARGET_FILE:NeurolingsCE>"
-        WORKING_DIRECTORY "$<TARGET_FILE_DIR:NeurolingsCE>"
-        VERBATIM
-      )
-      message(STATUS "Release build: adding post-build command windeployqt to deploy Qt runtime.")
-    else()
-      message(WARNING "windeployqt not found; NeurolingsCE.exe may fail to start outside of a Qt environment (missing Qt6Guid.dll).")
-    endif()
+  if(_qt_core_location)
+    get_filename_component(_qt_bin_dir "${_qt_core_location}" DIRECTORY)
+    find_program(QT_WINDEPLOYQT_EXECUTABLE windeployqt HINTS "${_qt_bin_dir}")
   else()
-    message(STATUS "Non-release build: skipping windeployqt.")
+    find_program(QT_WINDEPLOYQT_EXECUTABLE windeployqt)
+  endif()
+
+  if(QT_WINDEPLOYQT_EXECUTABLE)
+    add_custom_command(TARGET NeurolingsCE POST_BUILD
+      COMMAND "${QT_WINDEPLOYQT_EXECUTABLE}"
+              --no-translations
+              --no-system-d3d-compiler
+              "$<TARGET_FILE:NeurolingsCE>"
+      WORKING_DIRECTORY "$<TARGET_FILE_DIR:NeurolingsCE>"
+      VERBATIM
+    )
+    message(STATUS "windeployqt found; adding post-build command to deploy Qt runtime.")
+  else()
+    message(WARNING "windeployqt not found; NeurolingsCE.exe may fail to start outside of a Qt environment (missing Qt6Guid.dll).")
   endif()
 endif()
 
 # On Release builds, strip the binary to reduce size.
-if(CMAKE_BUILD_TYPE STREQUAL "Release")
-  message(STATUS "Release build: adding post-build command to strip binary")
-  add_custom_command(
-      TARGET NeurolingsCE POST_BUILD
-      COMMAND ${CMAKE_STRIP} $<TARGET_FILE:NeurolingsCE>
-      COMMENT "Stripping binary"
-  )
-else()
-  message(STATUS "Non-release build: skipping binary stripping")
+if(NOT MSVC)
+  if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    message(STATUS "Release build: adding post-build command to strip binary")
+    add_custom_command(
+        TARGET NeurolingsCE POST_BUILD
+        COMMAND ${CMAKE_STRIP} $<TARGET_FILE:NeurolingsCE>
+        COMMENT "Stripping binary"
+    )
+  else()
+    message(STATUS "Non-release build: skipping binary stripping")
+  endif()
 endif()
 
+function(define_assets_target TARGET_NAME TARGET)
+  set(_input_file "${CMAKE_CURRENT_SOURCE_DIR}/src/${TARGET}.in")
+  set(_target_file "${CMAKE_CURRENT_SOURCE_DIR}/src/${TARGET}")
+  configure_file(${_input_file} ${_target_file} @ONLY)
+  add_custom_target(${TARGET_NAME} ALL DEPENDS ${_target_file})
+  add_dependencies(NeurolingsCE ${TARGET_NAME})
+endfunction()
+
 # Generate metainfo.xml from template with version substitution
-set(METAINFO_TEMPLATE "${CMAKE_CURRENT_SOURCE_DIR}/src/packaging/io.github.qingchenyouforcc.NeurolingsCE.metainfo.xml.in")
-set(METAINFO_OUTPUT "${CMAKE_CURRENT_SOURCE_DIR}/src/packaging/io.github.qingchenyouforcc.NeurolingsCE.metainfo.xml")
-
-
-configure_file(
-  ${METAINFO_TEMPLATE}
-  ${METAINFO_OUTPUT}
-  @ONLY
-)
-
-add_custom_target(generate_metainfo ALL DEPENDS "${METAINFO_OUTPUT}")
-add_dependencies(NeurolingsCE generate_metainfo)
-
+define_assets_target(METAINFO_XML "packaging/io.github.qingchenyouforcc.NeurolingsCE.metainfo.xml")
 
 # Generate resources.rc from template (Windows)
-set(RESOURCES_RC_TEMPLATE "${CMAKE_CURRENT_SOURCE_DIR}/src/resources/resources.rc.in")
-set(RESOURCES_RC_OUTPUT "${CMAKE_CURRENT_SOURCE_DIR}/src/resources/resources.rc")
-
-configure_file(
-  ${RESOURCES_RC_TEMPLATE}
-  ${RESOURCES_RC_OUTPUT}
-  @ONLY
-)
-
-add_custom_target(generate_resources_rc ALL DEPENDS "${RESOURCES_RC_OUTPUT}")
-add_dependencies(NeurolingsCE generate_resources_rc)
+define_assets_target(RESOURCES_RC "resources/resources.rc")
 
 # Generate Info.plist from template (macOS)
-set(INFO_PLIST_TEMPLATE "${CMAKE_CURRENT_SOURCE_DIR}/src/packaging/NeurolingsCE.app/Contents/Info.plist.in")
-set(INFO_PLIST_OUTPUT "${CMAKE_CURRENT_SOURCE_DIR}/src/packaging/NeurolingsCE.app/Contents/Info.plist")
-
-configure_file(
-  ${INFO_PLIST_TEMPLATE}
-  ${INFO_PLIST_OUTPUT}
-  @ONLY
-)
-
-add_custom_target(generate_info_plist ALL DEPENDS "${INFO_PLIST_OUTPUT}")
-add_dependencies(NeurolingsCE generate_info_plist)
+define_assets_target(INFO_PLIST "packaging/NeurolingsCE.app/Contents/Info.plist")
 
 # Generate GNOME extension metadata.json from template (Linux)
-set(GNOME_METADATA_TEMPLATE "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/Platform/Linux/gnome_script/metadata.json.in")
-set(GNOME_METADATA_OUTPUT "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/Platform/Linux/gnome_script/metadata.json")
-
-configure_file(
-  ${GNOME_METADATA_TEMPLATE}
-  ${GNOME_METADATA_OUTPUT}
-  @ONLY
-)
-
-add_custom_target(generate_gnome_metadata ALL DEPENDS "${GNOME_METADATA_OUTPUT}")
-add_dependencies(NeurolingsCE generate_gnome_metadata)
+define_assets_target(GNOME_METADATA "platform/Platform/Linux/gnome_script/metadata.json")

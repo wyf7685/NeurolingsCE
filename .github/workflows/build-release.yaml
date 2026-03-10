@@ -11,6 +11,8 @@ jobs:
   build:
     name: Build on ${{ matrix.platform.host }}
     runs-on: ${{ matrix.platform.runner }}
+    env:
+      QT_VERSION: "6.8.3"
     strategy:
       fail-fast: false
       matrix:
@@ -19,7 +21,7 @@ jobs:
             host: linux
             qt_arch: linux_gcc_64
             qt_install_name: gcc_64
-            build_target: appimage
+            build_args: --target appimage
             artifact_name: linux-x86_64
             artifact_path: build/NeurolingsCE.AppImage
 
@@ -27,14 +29,14 @@ jobs:
             host: linux_arm64
             qt_arch: linux_gcc_arm64
             qt_install_name: gcc_arm64
-            build_target: appimage
+            build_args: --target appimage
             artifact_name: linux-arm64
             artifact_path: build/NeurolingsCE.AppImage
 
           - runner: windows-latest
             host: windows
-            qt_arch: win64_mingw
             qt_tools: tools_mingw1310
+            qt_arch: win64_mingw
             qt_install_name: mingw_64
             artifact_name: windows-x86_64
             artifact_path: build/bin/
@@ -51,16 +53,21 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libxcb-cursor0 libarchive-dev libwayland-dev wayland-protocols ccache zip
+          if [ "${{ matrix.platform.host }}" = "linux_arm64" ]; then
+            sudo apt-get install -y libgstreamer-plugins-bad1.0-0 libgstreamer-plugins-good1.0-0
+          fi
 
-      - name: Install build dependencies (arm64)
-        if: matrix.platform.host == 'linux_arm64'
-        run: |
-          sudo apt-get install -y libgstreamer-plugins-bad1.0-0 libgstreamer-plugins-good1.0-0
+      # - name: Patch libshijima & libshimejifinder for MSVC compatibility
+      #   if: matrix.platform.host == 'windows'
+      #   shell: bash
+      #   run: |
+      #     sed -i 's/set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror -Wpedantic")//' libshijima/CMakeLists.txt
+      #     sed -i 's/#include <unistd.h>//' libshimejifinder/shimejifinder/archive.cc
 
       - name: Install Qt6
         uses: jdpurcell/install-qt-action@v5
         with:
-          version: "6.8.2"
+          version: ${{ env.QT_VERSION }}
           host: ${{ matrix.platform.host }}
           target: "desktop"
           arch: ${{ matrix.platform.qt_arch }}
@@ -72,18 +79,21 @@ jobs:
         uses: hendrikmuhs/ccache-action@v1.2
         with:
           key: ${{ matrix.platform.host }}-qt6-release
-          max-size: 800M
+          max-size: 500M
 
-      - name: Build with CMake
+      - name: Configure with CMake
         shell: bash
         run: |
           cmake -S . -B build -G Ninja \
             -D CMAKE_BUILD_TYPE=Release \
-            -D CMAKE_PREFIX_PATH="${{ runner.workspace }}/Qt/6.8.2/${{ matrix.platform.qt_install_name }}" \
+            -D CMAKE_PREFIX_PATH="${{ runner.workspace }}/Qt/${{ env.QT_VERSION }}/${{ matrix.platform.qt_install_name }}" \
             -D CMAKE_C_COMPILER_LAUNCHER=ccache \
-            -D CMAKE_CXX_COMPILER_LAUNCHER=ccache \
-            -D SHIJIMA_WITH_LIBSHIMEJIFINDER=ON
-          cmake --build build -j 4 --target ${{ matrix.platform.build_target || 'all' }}
+            -D CMAKE_CXX_COMPILER_LAUNCHER=ccache
+
+      - name: Build with CMake
+        shell: bash
+        run: |
+          cmake --build build --parallel --config Release ${{ matrix.platform.build_args || '' }}
 
       - name: Archive ${{ matrix.platform.artifact_name }} release build
         uses: actions/upload-artifact@v4
