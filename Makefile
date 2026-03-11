@@ -235,7 +235,7 @@ libshijima/build/Makefile: libshijima/CMakeLists.txt FORCE
 
 libshimejifinder/build/Makefile: libshimejifinder/CMakeLists.txt FORCE
 	mkdir -p libshimejifinder/build && cd libshimejifinder/build && $(CMAKE) $(CMAKEFLAGS) \
-		-DSHIMEJIFINDER_BUILD_LIBARCHIVE=NO -DSHIMEJIFINDER_BUILD_EXAMPLES=NO ..
+		-DSHIMEJIFINDER_BUILD_LIBARCHIVE=NO ..
 
 libshimejifinder/build/libshimejifinder.a: libshimejifinder/build/Makefile
 	$(MAKE) -C libshimejifinder/build

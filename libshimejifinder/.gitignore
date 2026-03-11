@@ -5,7 +5,6 @@
 !default_actions.xml
 !default_behaviors.xml
 !CMakeLists.txt
-!main.cc
 !README.md
 !LICENSE
 
@@ -24,11 +23,5 @@
 
 !shimejifinder/
 !shimejifinder/**
-
-!tests/
-!tests/**
-!test_utf8_convert.sh
-
-tests/**/build/
 shimejifinder/default_actions.cc
 shimejifinder/default_behaviors.cc

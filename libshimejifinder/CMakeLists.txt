@@ -53,10 +53,6 @@ else()
 endif()
 include_directories(.)
 
-if(NOT DEFINED SHIMEJIFINDER_BUILD_EXAMPLES)
-    set(SHIMEJIFINDER_BUILD_EXAMPLES YES)
-endif()
-
 add_library(
     shimejifinder STATIC
     shimejifinder/libarchive/archive.cc
@@ -130,7 +126,3 @@ else()
     target_include_directories(shimejifinder PUBLIC ${LIBARCHIVE_INCLUDE_DIRS})
 endif()
 
-if(SHIMEJIFINDER_BUILD_EXAMPLES)
-    add_executable(shimejifinder-test main.cc)
-    target_link_libraries(shimejifinder-test shimejifinder)
-endif()

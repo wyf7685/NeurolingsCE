@@ -92,6 +92,7 @@ endif()
 if(SHIMEJIFINDER_USE_LIBARCHIVE)
     if(SHIMEJIFINDER_BUILD_LIBARCHIVE)
         set(BUILD_SHARED_LIBS OFF)
+        set(ENABLE_TEST OFF CACHE BOOL "Disable libarchive tests" FORCE)
         add_subdirectory(${LIBSHIMEJIFINDER_SOURCE_DIR}/libarchive
                             ${LIBSHIMEJIFINDER_BIN_DIR}/libarchive)
     else()
