@@ -21,6 +21,7 @@
 #include <QDir>
 #include <QStandardPaths>
 #include <QMessageBox>
+#include "shijima-qt/AppLog.hpp"
 #include <shijima/log.hpp>
 #include "Platform/Platform.hpp"
 #include "shijima-qt/ShijimaManager.hpp"
@@ -39,6 +40,7 @@ int main(int argc, char **argv) {
         shijima::set_log_level(SHIJIMA_LOG_PARSER | SHIJIMA_LOG_WARNINGS);
     #endif
     QApplication app(argc, argv);
+    AppLog::initialize(&app);
     eApp->init();
     app.setApplicationName(QStringLiteral(APP_NAME));
     app.setApplicationDisplayName(QStringLiteral(APP_DISPLAY_NAME));
@@ -67,11 +69,14 @@ int main(int argc, char **argv) {
         pingClient.set_read_timeout(0, 500000);
         auto pingResult = pingClient.Get("/shijima/api/v1/ping");
         if (pingResult != nullptr) {
+            APP_LOG_ERROR("startup") << "Single-instance guard rejected startup; ping endpoint already responded";
             throw std::runtime_error(QCoreApplication::translate("main", APP_NAME " is already running!").toStdString());
         }
+        APP_LOG_INFO("startup") << "Application startup checks passed";
         ShijimaManager::defaultManager()->show();
     }
     catch (std::exception &ex) {
+        APP_LOG_ERROR("startup") << "Failed to start application: " << ex.what();
         QMessageBox *msg = new QMessageBox {};
         msg->setText(QCoreApplication::translate("main", APP_NAME " failed to start. Reason: ") +
             QString::fromUtf8(ex.what()));
@@ -82,5 +87,6 @@ int main(int argc, char **argv) {
     int ret = app.exec();
     ShijimaManager::finalize();
     AssetLoader::finalize();
+    AppLog::shutdown();
     return ret;
 }

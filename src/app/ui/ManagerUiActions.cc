@@ -17,6 +17,7 @@
 //
 
 #include "shijima-qt/ShijimaManager.hpp"
+#include "shijima-qt/AppLog.hpp"
 #include "shijima-qt/MascotData.hpp"
 #include "../runtime/ManagerRuntimeHelpers.hpp"
 #include "ManagerUiHelpers.hpp"
@@ -24,7 +25,6 @@
 #include <cstdint>
 #include <cstdio>
 #include <filesystem>
-#include <iostream>
 #include <QApplication>
 #include <QColor>
 #include <QCoreApplication>
@@ -167,7 +167,8 @@ void ShijimaManager::deleteAction() {
             }
 
             std::filesystem::path path = mascotData->path().toStdString();
-            std::cout << "Deleting mascot: " << item->text().toStdString() << std::endl;
+            APP_LOG_INFO("ui") << "Deleting mascot template name=\""
+                << item->text().toStdString() << "\" path=\"" << path.string() << "\"";
             try {
                 std::filesystem::remove_all(path / "img");
                 std::filesystem::remove_all(path / "sound");
@@ -176,8 +177,8 @@ void ShijimaManager::deleteAction() {
                 std::filesystem::remove(path);
             }
             catch (std::exception &ex) {
-                std::cerr << "failed to delete mascot: " << path.string()
-                    << ": " << ex.what() << std::endl;
+                APP_LOG_ERROR("ui") << "Failed to delete mascot template path=\""
+                    << path.string() << "\": " << ex.what();
             }
             reloadMascot(item->text());
         }

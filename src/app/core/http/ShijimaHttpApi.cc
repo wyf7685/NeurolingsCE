@@ -17,12 +17,13 @@
 // 
 
 #include "shijima-qt/ShijimaHttpApi.hpp"
+#include "shijima-qt/AppLog.hpp"
 #include <httplib.h>
 #include "shijima-qt/ShijimaManager.hpp"
 #include "shijima-qt/MascotData.hpp"
 #include "shijima-qt/ui/mascot/ShijimaWidget.hpp"
+#include <sstream>
 #include <thread>
-#include <iostream>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QBuffer>
@@ -99,8 +100,8 @@ static std::optional<QJsonObject> jsonForRequest(Request const& req) {
     QJsonParseError error;
     auto doc = QJsonDocument::fromJson(bytes, &error);
     if (error.error != QJsonParseError::NoError) {
-        std::cerr << "JSON parse error: " << error.errorString().toStdString()
-            << std::endl;
+        APP_LOG_WARN("http") << "Rejected JSON body for " << req.method << " " << req.path
+            << ": " << error.errorString().toStdString();
         return {};
     }
     else if (!doc.isObject()) {
@@ -135,10 +136,21 @@ static bool selectorEval(ShijimaWidget *mascot, std::string const& selector) {
         eval = mascot->mascot().script_ctx->eval_bool(selector);
     }
     catch (std::exception &ex) {
-        std::cerr << "selector eval failed: " << ex.what() << std::endl;
+        APP_LOG_WARN("http") << "Selector evaluation failed for mascotId="
+            << mascot->mascotId() << ", selector=\"" << selector << "\": " << ex.what();
         eval = false;
     }
     return eval;
+}
+
+static std::string requestTarget(Request const& req) {
+    std::ostringstream target;
+    target << req.path;
+    for (auto it = req.params.begin(); it != req.params.end(); ++it) {
+        target << (it == req.params.begin() ? "?" : "&");
+        target << it->first << "=" << it->second;
+    }
+    return target.str();
 }
 
 ShijimaHttpApi::ShijimaHttpApi(ShijimaManager *manager): m_server(new Server),
@@ -353,18 +365,9 @@ ShijimaHttpApi::ShijimaHttpApi(ShijimaManager *manager): m_server(new Server),
     m_server->Post(".*", badRequest);
     m_server->Delete(".*", badRequest);
     m_server->Patch(".*", badRequest);
-    m_server->set_logger([](const Request &req, const Response &) {
-        std::cout << req.method << " " << req.path;
-        for (auto it = req.params.begin(); it != req.params.end(); ++it) {
-            if (it == req.params.begin()) {
-                std::cout << "?";
-            }
-            else {
-                std::cout << "&";
-            }
-            std::cout << it->first << "=" << it->second;
-        }
-        std::cout << std::endl;
+    m_server->set_logger([](const Request &req, const Response &res) {
+        APP_LOG_INFO("http") << req.method << " " << requestTarget(req)
+            << " -> status=" << res.status;
     });
 }
 
@@ -372,8 +375,11 @@ void ShijimaHttpApi::start(std::string const& host, int port) {
     stop();
     m_host = host;
     m_port = port;
+    APP_LOG_INFO("http") << "Starting local HTTP API on " << host << ":" << port;
     m_thread = new std::thread { [this, host, port](){
+        APP_LOG_INFO("http") << "HTTP API listen loop entered on " << host << ":" << port;
         m_server->listen(host, port);
+        APP_LOG_INFO("http") << "HTTP API listen loop exited";
     } };
 }
 
@@ -391,6 +397,7 @@ std::string const& ShijimaHttpApi::host() {
 
 void ShijimaHttpApi::stop() {
     if (m_server->is_running()) {
+        APP_LOG_INFO("http") << "Stopping local HTTP API on " << m_host << ":" << m_port;
         m_server->stop();
     }
     if (m_thread != nullptr) {

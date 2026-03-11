@@ -17,11 +17,11 @@
 //
 
 #include "shijima-qt/ShijimaManager.hpp"
+#include "shijima-qt/AppLog.hpp"
 #include "shijima-qt/MascotData.hpp"
 #include "shijima-qt/ui/mascot/ShijimaWidget.hpp"
 #include "../ui/ManagerUiHelpers.hpp"
 #include <filesystem>
-#include <iostream>
 #include <optional>
 #include <stdexcept>
 #include <QDir>
@@ -82,7 +82,9 @@ void ShijimaManager::loadData(MascotData *data) {
     m_runtime->factory.register_template(tmpl);
     m_runtime->loadedMascots.insert(data->name(), data);
     m_runtime->loadedMascotsById.insert(data->id(), data);
-    std::cout << "Loaded mascot: " << data->name().toStdString() << std::endl;
+    APP_LOG_INFO("mascot") << "Loaded mascot template name=\""
+        << data->name().toStdString() << "\" id=" << data->id()
+        << " path=\"" << data->path().toStdString() << "\"";
 }
 
 void ShijimaManager::loadDefaultMascot() {
@@ -108,8 +110,8 @@ std::map<int, ShijimaWidget *> const& ShijimaManager::mascotsById() {
 
 void ShijimaManager::reloadMascot(QString const& name) {
     if (m_runtime->loadedMascots.contains(name) && !m_runtime->loadedMascots[name]->deletable()) {
-        std::cout << "Refusing to unload mascot: " << name.toStdString()
-            << std::endl;
+        APP_LOG_WARN("mascot") << "Refusing to unload non-deletable mascot template name=\""
+            << name.toStdString() << "\"";
         return;
     }
 
@@ -121,8 +123,8 @@ void ShijimaManager::reloadMascot(QString const& name) {
         };
     }
     catch (std::exception &ex) {
-        std::cerr << "couldn't load mascot: " << name.toStdString() << std::endl;
-        std::cerr << ex.what() << std::endl;
+        APP_LOG_ERROR("mascot") << "Failed to reload mascot template name=\""
+            << name.toStdString() << "\": " << ex.what();
     }
 
     if (m_runtime->loadedMascots.contains(name)) {
@@ -133,7 +135,8 @@ void ShijimaManager::reloadMascot(QString const& name) {
         m_runtime->loadedMascots.remove(name);
         m_runtime->loadedMascotsById.remove(oldData->id());
         delete oldData;
-        std::cout << "Unloaded mascot: " << name.toStdString() << std::endl;
+        APP_LOG_INFO("mascot") << "Unloaded mascot template name=\""
+            << name.toStdString() << "\"";
     }
 
     if (newData != nullptr) {
@@ -288,9 +291,8 @@ void ShijimaManager::tick() {
                 product = m_runtime->factory.spawn(breedRequest);
             }
             catch (std::exception &ex) {
-                std::cerr << "couldn't fulfill breed request for "
-                    << breedRequest.name << std::endl;
-                std::cerr << ex.what() << std::endl;
+                APP_LOG_ERROR("mascot") << "Failed to fulfill breed request name=\""
+                    << breedRequest.name << "\": " << ex.what();
             }
 
             if (product.has_value()) {
@@ -355,7 +357,7 @@ void ShijimaManager::spawnClicked() {
         if (i++ != target) {
             continue;
         }
-        std::cout << "Spawning: " << pair.first << std::endl;
+        APP_LOG_INFO("mascot") << "Spawning random mascot template name=\"" << pair.first << "\"";
         spawn(pair.first);
         break;
     }

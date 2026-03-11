@@ -158,6 +158,7 @@ endif()
 
 target_sources(NeurolingsCE PRIVATE
   src/app/main.cc
+  src/app/core/AppLog.cc
   src/app/core/assets/Asset.cc
   src/app/core/assets/MascotData.cc
   src/app/core/assets/AssetLoader.cc

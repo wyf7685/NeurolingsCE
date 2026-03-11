@@ -17,10 +17,10 @@
 //
 
 #include "shijima-qt/ShijimaManager.hpp"
+#include "shijima-qt/AppLog.hpp"
 #include "../ui/ManagerUiHelpers.hpp"
 #include "ManagerRuntimeHelpers.hpp"
 #include <exception>
-#include <iostream>
 #include <QDragEnterEvent>
 #include <QMessageBox>
 #include <QMimeData>
@@ -34,17 +34,23 @@
 
 std::set<std::string> ShijimaManager::import(QString const& path) noexcept {
     try {
+        APP_LOG_INFO("import") << "Importing mascot archive path=\"" << path.toStdString() << "\"";
         auto ar = shimejifinder::analyze(path.toStdString());
         ar->extract(m_runtime->mascotsPath.toStdString());
-        return ar->shimejis();
+        auto shimejis = ar->shimejis();
+        APP_LOG_INFO("import") << "Imported archive path=\"" << path.toStdString()
+            << "\" templates=" << shimejis.size();
+        return shimejis;
     }
     catch (std::exception &ex) {
-        std::cerr << "import failed: " << ex.what() << std::endl;
+        APP_LOG_ERROR("import") << "Import failed for path=\"" << path.toStdString()
+            << "\": " << ex.what();
         return {};
     }
 }
 
 void ShijimaManager::importWithDialog(QList<QString> const& paths) {
+    APP_LOG_INFO("import") << "Starting import workflow for archives=" << paths.size();
     ForcedProgressDialog *dialog = new ForcedProgressDialog { this };
     dialog->setRange(0, 0);
     QPushButton *cancelButton = new QPushButton;
@@ -65,6 +71,7 @@ void ShijimaManager::importWithDialog(QList<QString> const& paths) {
         return changed;
     }).then([this, dialog](std::set<std::string> changed) {
     ShijimaManagerRuntimeInternal::dispatchToMainThread([this, changed, dialog]() {
+            APP_LOG_INFO("import") << "Import workflow completed; changed_templates=" << changed.size();
             reloadMascots(changed);
             this->show();
             dialog->close();
@@ -125,5 +132,6 @@ void ShijimaManager::dropEvent(QDropEvent *event) {
     for (auto &url : event->mimeData()->urls()) {
         paths.append(url.toLocalFile());
     }
+    APP_LOG_INFO("import") << "Received drag-and-drop import request with files=" << paths.size();
     importWithDialog(paths);
 }

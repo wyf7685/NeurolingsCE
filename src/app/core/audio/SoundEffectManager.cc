@@ -17,12 +17,12 @@
 // 
 
 #include "shijima-qt/SoundEffectManager.hpp"
+#include "shijima-qt/AppLog.hpp"
 
 #if SHIJIMA_USE_QTMULTIMEDIA
 
 #include <QFile>
 #include <QDir>
-#include <iostream>
 #include <QSoundEffect>
 
 void SoundEffectManager::play(QString const& name) {
@@ -36,7 +36,8 @@ void SoundEffectManager::play(QString const& name) {
             }
         }
         if (url.isEmpty()) {
-            std::cerr << "Could not load effect: " << name.toStdString() << std::endl;
+            APP_LOG_WARN("audio") << "Sound effect not found name=\""
+                << name.toStdString() << "\"";
             return;
         }
         QSoundEffect *effect = m_loadedEffects[name] = new QSoundEffect;

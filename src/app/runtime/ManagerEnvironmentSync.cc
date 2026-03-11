@@ -17,10 +17,10 @@
 //
 
 #include "shijima-qt/ShijimaManager.hpp"
+#include "shijima-qt/AppLog.hpp"
 #include "shijima-qt/ui/mascot/ShijimaWidget.hpp"
 #include "ManagerRuntimeHelpers.hpp"
 #include <cmath>
-#include <iostream>
 #include <QCursor>
 #include <QGuiApplication>
 #include <QScreen>
@@ -122,7 +122,7 @@ void ShijimaManager::updateEnvironment(QScreen *screen) {
             available = geometry;
         }
         else {
-            std::cerr << "warning: sandboxWidget is not initialized" << std::endl;
+            APP_LOG_WARN("environment") << "Windowed environment requested before sandbox widget was initialized";
         }
     }
     else {

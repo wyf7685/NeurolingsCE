@@ -17,6 +17,7 @@
 // 
 
 #include "PrivateActiveWindowObserver.hpp"
+#include "shijima-qt/AppLog.hpp"
 #include "KWin.hpp"
 #include "GNOME.hpp"
 #include "KWin.hpp"
@@ -28,7 +29,6 @@
 #include <QTextStream>
 #include <QGuiApplication>
 #include <QFile>
-#include <iostream>
 #include <unistd.h>
 
 namespace Platform {
@@ -48,22 +48,20 @@ PrivateActiveWindowObserver::PrivateActiveWindowObserver(QObject *obj)
     bool disableWindowTracking = QProcessEnvironment::systemEnvironment()
         .value("SHIJIMA_NO_WINDOW_TRACKING") == "1";
     if (disableWindowTracking) {
-        std::cout << "Detected SHIJIMA_NO_WINDOW_TRACKING=1, window tracking " <<
-            "is disabled" << std::endl;
+        APP_LOG_INFO("platform") << "Detected SHIJIMA_NO_WINDOW_TRACKING=1; window tracking disabled";
         KWin::running(); // KDE still needs to be detected to disable window masks
         m_backend = nullptr;
     }
     else if (KWin::running()) {
-        std::cout << "Detected KDE" << std::endl;
+        APP_LOG_INFO("platform") << "Detected KDE desktop environment";
         m_backend = std::make_unique<KDEWindowObserverBackend>();
     }
     else if (GNOME::running()) {
-        std::cout << "Detected GNOME" << std::endl;
+        APP_LOG_INFO("platform") << "Detected GNOME desktop environment";
         m_backend = std::make_unique<GNOMEWindowObserverBackend>();
     }
     else {
-        std::cout << "Could not find a supported desktop environment, " <<
-            "window tracking will not work" << std::endl;
+        APP_LOG_WARN("platform") << "No supported desktop environment detected; window tracking disabled";
         m_backend = nullptr;
     }
     if (m_backend != nullptr) {

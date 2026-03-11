@@ -17,11 +17,11 @@
 //
 
 #include "shijima-qt/ShijimaManager.hpp"
+#include "shijima-qt/AppLog.hpp"
 
 #include "../runtime/ManagerRuntimeHelpers.hpp"
 #include "ManagerUiHelpers.hpp"
 
-#include <iostream>
 #include <memory>
 
 #include <QDir>
@@ -75,7 +75,8 @@ ShijimaManager::ShijimaManager(QWidget *parent):
         readme.close();
     }
     m_runtime->mascotsPath = mascotsPath;
-    std::cout << "Mascots path: " << m_runtime->mascotsPath.toStdString() << std::endl;
+    APP_LOG_INFO("startup") << "Mascot storage path=\""
+        << m_runtime->mascotsPath.toStdString() << "\"";
 
     loadDefaultMascot();
     loadAllMascots();
@@ -143,6 +144,7 @@ ShijimaManager::ShijimaManager(QWidget *parent):
 
     ShijimaManagerUiInternal::setupTrayIcon(this);
     m_httpApi.start("127.0.0.1", 32456);
+    APP_LOG_INFO("startup") << "Manager window initialized";
 }
 
 bool ShijimaManager::eventFilter(QObject *obj, QEvent *event) {
