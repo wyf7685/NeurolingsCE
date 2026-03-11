@@ -1139,7 +1139,7 @@ void ShijimaManager::updateStatusBar() {
 }
 
 ShijimaManager::ShijimaManager(QWidget *parent):
-    PlatformWidget(parent, PlatformWidget::ShowOnAllDesktops),
+    PlatformWidget(parent),
     m_sandboxWidget(nullptr),
     m_settings("pixelomer", "Shijima-Qt"),
     m_windowedModeAction(nullptr),
@@ -1474,6 +1474,9 @@ void ShijimaManager::askClose() {
 
 void ShijimaManager::setManagerVisible(bool visible) {
     if (!m_wasVisible && visible) {
+        if (isMinimized()) {
+            setWindowState(windowState() & ~Qt::WindowMinimized);
+        }
         show();
         if (window() != nullptr) {
             window()->activateWindow();
@@ -1487,6 +1490,9 @@ void ShijimaManager::setManagerVisible(bool visible) {
             return;
         }
         #endif
+        if (isMinimized()) {
+            setWindowState(windowState() & ~Qt::WindowMinimized);
+        }
         hide();
         clearFocus();
         m_wasVisible = false;
@@ -1526,20 +1532,9 @@ void ShijimaManager::tick() {
         #endif
     }
 
-    #if !defined(__APPLE__)
-    if (isMinimized()) {
-        setWindowState(windowState() & ~Qt::WindowMinimized);
-        setManagerVisible(!m_wasVisible);
-    }
-    else if (isMaximized()) {
-        setManagerVisible(true);
-    }
-    #endif
-
     if (m_mascots.size() == 0) {
         #if !defined(__APPLE__)
-        if (!windowedMode() && (isMinimized() || !m_wasVisible)) {
-            setWindowState(windowState() & ~Qt::WindowMinimized);
+        if (!windowedMode() && !m_wasVisible) {
             setManagerVisible(true);
         }
         #endif
@@ -1788,6 +1783,9 @@ void ShijimaManager::retranslateUi() {
 void ShijimaManager::changeEvent(QEvent *event) {
     if (event->type() == QEvent::LanguageChange && !m_constructing) {
         retranslateUi();
+    }
+    else if (event->type() == QEvent::WindowStateChange) {
+        rebuildTrayMenuFor(this);
     }
     PlatformWidget::changeEvent(event);
 }

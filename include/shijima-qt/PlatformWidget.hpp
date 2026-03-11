@@ -30,7 +30,7 @@ public:
     enum Flags : uint32_t {
         ShowOnAllDesktops = 0x1
     };
-    PlatformWidget(QWidget *parent = nullptr, Flags flags = 0): T(parent) {
+    PlatformWidget(QWidget *parent = nullptr, Flags flags = static_cast<Flags>(0)): T(parent) {
         setupDispatchTimer();
         m_flags = flags;
     }
