@@ -332,21 +332,36 @@ ShijimaWidget *ShijimaManager::hitTest(QPoint const& screenPos) {
 }
 
 ShijimaWidget *ShijimaManager::spawn(std::string const& name) {
-    QScreen *screen = mascotScreen();
-    updateEnvironment(screen);
-    auto &env = m_runtime->env[screen];
-    auto product = m_runtime->factory.spawn(name, {});
-    product.manager->state->env = env;
-    product.manager->reset_position();
-    ShijimaWidget *shimeji = new ShijimaWidget(
-        m_runtime->loadedMascots[QString::fromStdString(name)],
-        std::move(product.manager), m_runtime->idCounter++,
-        windowedMode(), mascotParent());
-    shimeji->show();
-    m_runtime->mascots.push_back(shimeji);
-    m_runtime->mascotsById[shimeji->mascotId()] = shimeji;
-    env->reset_scale();
-    return shimeji;
+    APP_LOG_INFO("mascot") << "Spawn requested for template name=\"" << name << "\"";
+
+    try {
+        QScreen *screen = mascotScreen();
+        updateEnvironment(screen);
+        auto &env = m_runtime->env[screen];
+        auto product = m_runtime->factory.spawn(name, {});
+        product.manager->state->env = env;
+        product.manager->reset_position();
+        ShijimaWidget *shimeji = new ShijimaWidget(
+            m_runtime->loadedMascots[QString::fromStdString(name)],
+            std::move(product.manager), m_runtime->idCounter++,
+            windowedMode(), mascotParent());
+        shimeji->show();
+        m_runtime->mascots.push_back(shimeji);
+        m_runtime->mascotsById[shimeji->mascotId()] = shimeji;
+        env->reset_scale();
+        APP_LOG_INFO("mascot") << "Spawn succeeded for template name=\"" << name
+            << "\" mascotId=" << shimeji->mascotId();
+        return shimeji;
+    }
+    catch (std::exception &ex) {
+        APP_LOG_ERROR("mascot") << "Spawn failed for template name=\"" << name
+            << "\": " << ex.what();
+    }
+    catch (...) {
+        APP_LOG_ERROR("mascot") << "Spawn failed for template name=\"" << name
+            << "\" with unknown exception";
+    }
+    return nullptr;
 }
 
 void ShijimaManager::spawnClicked() {

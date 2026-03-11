@@ -32,6 +32,5 @@ QString colorToString(QColor const& color);
 void applyMascotListTheme(QListWidget& listWidget);
 void refreshTrayMenu(ShijimaManager *manager);
 void setupTrayIcon(ShijimaManager *manager);
-void teardownTrayIcon();
 
 }

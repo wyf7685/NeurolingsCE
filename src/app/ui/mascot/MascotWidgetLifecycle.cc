@@ -20,6 +20,7 @@
 
 #include <QDir>
 
+#include "shijima-qt/AppLog.hpp"
 #include "shijima-qt/ui/menus/ShijimaContextMenu.hpp"
 #include "shijima-qt/ui/widgets/SpeechBubbleWidget.hpp"
 #include "shijima-qt/ui/dialogs/inspector/ShimejiInspectorDialog.hpp"
@@ -85,51 +86,66 @@ bool ShijimaWidget::inspectorVisible() {
 }
 
 void ShijimaWidget::tick() {
-    if (m_markedForDeletion) {
-        close();
-        return;
-    }
-    if (paused()) {
-        return;
-    }
+    try {
+        if (m_markedForDeletion) {
+            close();
+            return;
+        }
+        if (paused()) {
+            return;
+        }
 
-    // Tick
-    auto prev_frame = m_mascot->state->active_frame;
-    m_mascot->tick();
-    auto &new_frame = m_mascot->state->active_frame;
-    auto &new_sound = m_mascot->state->active_sound;
-    bool forceRepaint = prev_frame.name != new_frame.name;
-    bool offsetsChanged = updateOffsets();
-    if (m_mascot->state->dead) {
-        forceRepaint = true;
-        new_frame.name = "";
-        new_sound = "";
-        m_mascot->state->active_sound_changed = true;
-        markForDeletion();
-    }
-    if (offsetsChanged || forceRepaint) {
-        repaint();
-        update();
-    }
-    if (m_mascot->state->active_sound_changed) {
-        m_sounds.stop();
-        if (!new_sound.empty()) {
-            m_sounds.play(QString::fromStdString(new_sound));
+        // Tick
+        auto prev_frame = m_mascot->state->active_frame;
+        m_mascot->tick();
+        auto &new_frame = m_mascot->state->active_frame;
+        auto &new_sound = m_mascot->state->active_sound;
+        bool forceRepaint = prev_frame.name != new_frame.name;
+        bool offsetsChanged = updateOffsets();
+        if (m_mascot->state->dead) {
+            forceRepaint = true;
+            new_frame.name = "";
+            new_sound = "";
+            m_mascot->state->active_sound_changed = true;
+            markForDeletion();
+        }
+        if (offsetsChanged || forceRepaint) {
+            repaint();
+            update();
+        }
+        if (m_mascot->state->active_sound_changed) {
+            m_sounds.stop();
+            if (!new_sound.empty()) {
+                m_sounds.play(QString::fromStdString(new_sound));
+            }
+        }
+        else if (!m_sounds.playing()) {
+            m_mascot->state->active_sound.clear();
+        }
+
+        // Update inspector
+        if (m_inspector != nullptr && m_inspector->isVisible()) {
+            m_inspector->tick();
+        }
+
+        // Update speech bubble position
+        if (m_speechBubble != nullptr && m_speechBubble->isActive()) {
+            QPoint anchorPos = mapToGlobal(QPoint(width() / 2, 0));
+            m_speechBubble->updatePosition(anchorPos);
         }
     }
-    else if (!m_sounds.playing()) {
-        m_mascot->state->active_sound.clear();
+    catch (std::exception &ex) {
+        APP_LOG_ERROR("mascot") << "Tick failed for mascotId=" << m_mascotId
+            << " name=\"" << m_data->name().toStdString() << "\": " << ex.what();
+        markForDeletion();
+        close();
     }
-
-    // Update inspector
-    if (m_inspector != nullptr && m_inspector->isVisible()) {
-        m_inspector->tick();
-    }
-
-    // Update speech bubble position
-    if (m_speechBubble != nullptr && m_speechBubble->isActive()) {
-        QPoint anchorPos = mapToGlobal(QPoint(width() / 2, 0));
-        m_speechBubble->updatePosition(anchorPos);
+    catch (...) {
+        APP_LOG_ERROR("mascot") << "Tick failed for mascotId=" << m_mascotId
+            << " name=\"" << m_data->name().toStdString()
+            << "\" with unknown exception";
+        markForDeletion();
+        close();
     }
 }
 

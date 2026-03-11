@@ -453,6 +453,33 @@ duk_idx_t context::build_environment() {
     build_border<mascot::environment::hborder>([this]() { return this->state->env->ceiling; });
     put_prop(-2, "ceiling");
 
+    // environment.wall
+    auto wall = duk_push_bare_object(duk);
+    push_function([this](duk_context *ctx) -> duk_ret_t {
+        auto point = duk_to_point(ctx, 0);
+        auto &env = *this->state->env;
+        bool isOn = env.work_area.left_border().is_on(point) ||
+            env.work_area.right_border().is_on(point) ||
+            env.active_ie.left_border().is_on(point) ||
+            env.active_ie.right_border().is_on(point);
+        duk_push_boolean(ctx, isOn);
+        return 1;
+    }, 1);
+    duk_put_prop_string(duk, -2, "isOn");
+    push_function([this](duk_context *ctx) -> duk_ret_t {
+        auto point = duk_to_point(ctx, 0);
+        auto &env = *this->state->env;
+        bool faces = env.work_area.left_border().faces(point) ||
+            env.work_area.right_border().faces(point) ||
+            env.active_ie.left_border().faces(point) ||
+            env.active_ie.right_border().faces(point);
+        duk_push_boolean(ctx, faces);
+        return 1;
+    }, 1);
+    duk_put_prop_string(duk, -2, "faces");
+    duk_seal(duk, -1);
+    put_prop(-2, "wall");
+
     // environment.workArea
     build_area([this]() -> mascot::environment::area& { return this->state->env->work_area; });
     put_prop(-2, "workArea");

@@ -26,6 +26,7 @@
 #include <cctype>
 
 #include "Platform/Platform.hpp"
+#include "shijima-qt/AppLog.hpp"
 #include "shijima-qt/AssetLoader.hpp"
 
 Asset const& ShijimaWidget::getActiveAsset() {
@@ -44,38 +45,53 @@ bool ShijimaWidget::isMirroredRender() const {
 }
 
 void ShijimaWidget::paintEvent(QPaintEvent *event) {
-    if (!m_visible) {
-        return;
-    }
-    auto &asset = getActiveAsset();
-    auto &image = asset.image(isMirroredRender());
-    auto scaledSize = image.size() / m_drawScale;
-    QPainter painter(this);
-    if (m_drawScale >= 4.0) {
-        // High shrink ratio: use area-averaging pre-scale for better quality
-        auto preScaled = image.scaled(scaledSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
-        painter.drawImage(m_drawOrigin, preScaled);
-    }
-    else {
-        painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
-        painter.drawImage(QRect { m_drawOrigin, scaledSize }, image);
-    }
-#ifdef __linux__
-    if (Platform::useWindowMasks()) {
-        m_windowMask = QBitmap::fromPixmap(asset.mask(isMirroredRender())
-            .scaled(scaledSize));
-        m_windowMask.translate(m_drawOrigin);
-        auto bounding = m_windowMask.boundingRect();
-        bounding.setTop(0);
-        bounding.setLeft(0);
-        if (bounding.width() > 0 && bounding.height() > 0) {
-            setMask(m_windowMask);
+    try {
+        if (!m_visible) {
+            return;
+        }
+        auto &asset = getActiveAsset();
+        auto &image = asset.image(isMirroredRender());
+        auto scaledSize = image.size() / m_drawScale;
+        QPainter painter(this);
+        if (m_drawScale >= 4.0) {
+            // High shrink ratio: use area-averaging pre-scale for better quality
+            auto preScaled = image.scaled(scaledSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+            painter.drawImage(m_drawOrigin, preScaled);
         }
         else {
-            setMask(QRect { m_windowWidth - 2, m_windowHeight - 2, 1, 1 });
+            painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
+            painter.drawImage(QRect { m_drawOrigin, scaledSize }, image);
         }
-    }
+#ifdef __linux__
+        if (Platform::useWindowMasks()) {
+            m_windowMask = QBitmap::fromPixmap(asset.mask(isMirroredRender())
+                .scaled(scaledSize));
+            m_windowMask.translate(m_drawOrigin);
+            auto bounding = m_windowMask.boundingRect();
+            bounding.setTop(0);
+            bounding.setLeft(0);
+            if (bounding.width() > 0 && bounding.height() > 0) {
+                setMask(m_windowMask);
+            }
+            else {
+                setMask(QRect { m_windowWidth - 2, m_windowHeight - 2, 1, 1 });
+            }
+        }
 #endif
+    }
+    catch (std::exception &ex) {
+        APP_LOG_ERROR("mascot") << "Paint failed for mascotId=" << m_mascotId
+            << " name=\"" << m_data->name().toStdString() << "\": " << ex.what();
+        markForDeletion();
+        close();
+    }
+    catch (...) {
+        APP_LOG_ERROR("mascot") << "Paint failed for mascotId=" << m_mascotId
+            << " name=\"" << m_data->name().toStdString()
+            << "\" with unknown exception";
+        markForDeletion();
+        close();
+    }
 }
 
 bool ShijimaWidget::updateOffsets() {
