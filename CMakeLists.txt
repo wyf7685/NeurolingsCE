@@ -170,11 +170,17 @@ target_sources(NeurolingsCE PRIVATE
   src/app/ForcedProgressDialog.cc
   src/app/ShijimaContextMenu.cc
   src/app/ShijimaManager.cc
+  src/app/runtime/ShijimaManagerEnvironment.cc
+  src/app/runtime/ShijimaManagerImport.cc
+  src/app/runtime/ShijimaManagerMascots.cc
   src/app/ShijimaWidget.cc
   src/app/SoundEffectManager.cc
   src/app/ShijimaLicensesDialog.cc
   src/app/ShimejiInspectorDialog.cc
   src/app/ShijimaHttpApi.cc
+  src/app/ui/ShijimaManagerActions.cc
+  src/app/ui/ShijimaManagerPages.cc
+  src/app/ui/ShijimaManagerTray.cc
   src/app/cli.cc
   src/app/SimpleZipImporter.cc
   src/app/SpeechBubbleWidget.cc

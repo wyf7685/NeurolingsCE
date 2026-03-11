@@ -11,12 +11,18 @@ SOURCES = src/app/main.cc \
 	src/app/ForcedProgressDialog.cc \
 	src/app/ShijimaContextMenu.cc \
 	src/app/ShijimaManager.cc \
+	src/app/runtime/ShijimaManagerEnvironment.cc \
+	src/app/runtime/ShijimaManagerImport.cc \
+	src/app/runtime/ShijimaManagerMascots.cc \
 	src/app/ShijimaWidget.cc \
 	src/app/SoundEffectManager.cc \
 	src/app/ShijimaLicensesDialog.cc \
 	src/app/ShimejiInspectorDialog.cc \
 	DefaultMascot.cc \
 	src/app/ShijimaHttpApi.cc \
+	src/app/ui/ShijimaManagerActions.cc \
+	src/app/ui/ShijimaManagerPages.cc \
+	src/app/ui/ShijimaManagerTray.cc \
 	src/app/cli.cc \
 	src/app/SpeechBubbleWidget.cc \
 	src/app/SimpleZipImporter.cc \
