@@ -16,7 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // 
 
-#include "shijima-qt/ShijimaWidget.hpp"
+#include "shijima-qt/ui/mascot/ShijimaWidget.hpp"
 
 #include <QMouseEvent>
 #include <QSettings>

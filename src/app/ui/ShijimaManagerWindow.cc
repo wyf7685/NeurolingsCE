@@ -17,11 +17,15 @@
 //
 
 #include "shijima-qt/ShijimaManager.hpp"
-#include "ShijimaManagerInternal.hpp"
+
+#include "../runtime/ShijimaManagerRuntimeInternal.hpp"
+#include "ShijimaManagerUiInternal.hpp"
+
 #include <iostream>
 #include <memory>
-#include <QCloseEvent>
+
 #include <QDir>
+#include <QEvent>
 #include <QFile>
 #include <QGuiApplication>
 #include <QKeyEvent>
@@ -31,64 +35,9 @@
 #include <QStandardPaths>
 #include <QStyleHints>
 #include <QVariant>
+
 #include "ElaStatusBar.h"
 #include "ElaTheme.h"
-
-static ShijimaManager *m_defaultManager = nullptr;
-
-ShijimaManager *ShijimaManager::defaultManager() {
-    if (m_defaultManager == nullptr) {
-        m_defaultManager = new ShijimaManager;
-    }
-    return m_defaultManager;
-}
-
-void ShijimaManager::finalize() {
-    if (m_defaultManager != nullptr) {
-        delete m_defaultManager;
-        m_defaultManager = nullptr;
-    }
-}
-
-std::unique_lock<std::mutex> ShijimaManager::acquireLock() {
-    return std::unique_lock<std::mutex> { m_runtime->mutex };
-}
-
-QString const& ShijimaManager::mascotsPath() {
-    return m_runtime->mascotsPath;
-}
-
-ShijimaManager::~ShijimaManager() {
-    disconnect(qApp, &QGuiApplication::screenAdded,
-        this, &ShijimaManager::screenAdded);
-    disconnect(qApp, &QGuiApplication::screenRemoved,
-        this, &ShijimaManager::screenRemoved);
-}
-
-void ShijimaManager::abortPendingCallbacks() {
-    auto lock = acquireLock();
-    m_runtime->shuttingDown.store(true);
-    m_runtime->tickCallbacks.clear();
-    m_runtime->hasTickCallbacks = false;
-    m_runtime->tickCallbackCompletion.notify_all();
-}
-
-void ShijimaManager::onTickSync(std::function<void(ShijimaManager *)> callback) {
-    if (m_runtime->shuttingDown.load()) {
-        return;
-    }
-
-    auto lock = acquireLock();
-    if (m_runtime->shuttingDown.load()) {
-        return;
-    }
-
-    m_runtime->hasTickCallbacks = true;
-    m_runtime->tickCallbacks.push_back(callback);
-    m_runtime->tickCallbackCompletion.wait(lock, [this]{
-        return m_runtime->shuttingDown.load() || m_runtime->tickCallbacks.empty();
-    });
-}
 
 ShijimaManager::ShijimaManager(QWidget *parent):
     PlatformWidget(parent),
@@ -132,7 +81,7 @@ ShijimaManager::ShijimaManager(QWidget *parent):
     loadAllMascots();
     setAcceptDrops(true);
 
-    m_runtime->mascotTimer = startTimer(40 / ShijimaManagerInternal::kSubtickCount);
+    m_runtime->mascotTimer = startTimer(40 / ShijimaManagerRuntimeInternal::kSubtickCount);
     if (m_runtime->windowObserver.tickFrequency() > 0) {
         m_runtime->windowObserverTimer = startTimer(m_runtime->windowObserver.tickFrequency());
     }
@@ -167,9 +116,9 @@ ShijimaManager::ShijimaManager(QWidget *parent):
     m_ui->listWidget->setIconSize({ 64, 64 });
     m_ui->listWidget->installEventFilter(this);
     m_ui->listWidget->setSelectionMode(QListWidget::ExtendedSelection);
-    ShijimaManagerInternal::applyMascotListTheme(*m_ui->listWidget);
+    ShijimaManagerUiInternal::applyMascotListTheme(*m_ui->listWidget);
     connect(eTheme, &ElaTheme::themeModeChanged, this, [this]() {
-        ShijimaManagerInternal::applyMascotListTheme(*m_ui->listWidget);
+        ShijimaManagerUiInternal::applyMascotListTheme(*m_ui->listWidget);
     });
 
     setWindowTitle(tr(APP_NAME " \u2014 Mascot Manager"));
@@ -192,52 +141,8 @@ ShijimaManager::ShijimaManager(QWidget *parent):
     setManagerVisible(true);
     m_constructing = false;
 
-    ShijimaManagerInternal::setupTrayIcon(this);
+    ShijimaManagerUiInternal::setupTrayIcon(this);
     m_httpApi.start("127.0.0.1", 32456);
-}
-
-void ShijimaManager::closeEvent(QCloseEvent *event) {
-#if !defined(__APPLE__)
-    if (!m_allowClose) {
-        event->ignore();
-#if defined(_WIN32)
-        if (m_runtime->mascots.size() == 0) {
-            askClose();
-        }
-        else {
-            setManagerVisible(false);
-        }
-#else
-        askClose();
-#endif
-        return;
-    }
-
-    abortPendingCallbacks();
-    m_httpApi.stop();
-    if (m_runtime->mascotTimer != 0) {
-        killTimer(m_runtime->mascotTimer);
-        m_runtime->mascotTimer = 0;
-    }
-    if (m_runtime->windowObserverTimer != 0) {
-        killTimer(m_runtime->windowObserverTimer);
-        m_runtime->windowObserverTimer = 0;
-    }
-    event->accept();
-#else
-    event->ignore();
-    setManagerVisible(false);
-#endif
-}
-
-void ShijimaManager::timerEvent(QTimerEvent *event) {
-    int timerId = event->timerId();
-    if (timerId == m_runtime->mascotTimer) {
-        tick();
-    }
-    else if (timerId == m_runtime->windowObserverTimer) {
-        m_runtime->windowObserver.tick();
-    }
 }
 
 bool ShijimaManager::eventFilter(QObject *obj, QEvent *event) {
@@ -259,9 +164,7 @@ void ShijimaManager::changeEvent(QEvent *event) {
         retranslateUi();
     }
     else if (event->type() == QEvent::WindowStateChange) {
-        ShijimaManagerInternal::refreshTrayMenu(this);
+        ShijimaManagerUiInternal::refreshTrayMenu(this);
     }
     PlatformWidget::changeEvent(event);
 }
-
-#include "ShijimaManager.moc"

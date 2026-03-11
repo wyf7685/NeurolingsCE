@@ -17,7 +17,7 @@
 //
 
 #include "shijima-qt/ShijimaManager.hpp"
-#include "../../ShijimaManagerInternal.hpp"
+#include "../ShijimaManagerUiInternal.hpp"
 #include <QAction>
 #include <QColorDialog>
 #include <QDialog>
@@ -154,7 +154,7 @@ void ShijimaManager::setupSettingsPage() {
             if (dialog.exec() == 1) {
                 m_ui->sandboxBackground = dialog.selectedColor();
                 m_settings.setValue("windowedModeBackground",
-                    ShijimaManagerInternal::colorToString(dialog.selectedColor()));
+                ShijimaManagerUiInternal::colorToString(dialog.selectedColor()));
                 updateSandboxBackground();
             }
         });

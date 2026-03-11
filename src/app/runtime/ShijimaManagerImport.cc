@@ -17,7 +17,8 @@
 //
 
 #include "shijima-qt/ShijimaManager.hpp"
-#include "../ShijimaManagerInternal.hpp"
+#include "../ui/ShijimaManagerUiInternal.hpp"
+#include "ShijimaManagerRuntimeInternal.hpp"
 #include <exception>
 #include <iostream>
 #include <QDragEnterEvent>
@@ -71,7 +72,7 @@ void ShijimaManager::importWithDialog(QList<QString> const& paths) {
         }
         return changed;
     }).then([this, dialog](std::set<std::string> changed) {
-        ShijimaManagerInternal::dispatchToMainThread([this, changed, dialog]() {
+    ShijimaManagerRuntimeInternal::dispatchToMainThread([this, changed, dialog]() {
             reloadMascots(changed);
             this->show();
             dialog->close();

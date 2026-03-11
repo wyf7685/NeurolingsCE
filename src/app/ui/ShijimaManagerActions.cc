@@ -18,7 +18,8 @@
 
 #include "shijima-qt/ShijimaManager.hpp"
 #include "shijima-qt/MascotData.hpp"
-#include "../ShijimaManagerInternal.hpp"
+#include "../runtime/ShijimaManagerRuntimeInternal.hpp"
+#include "ShijimaManagerUiInternal.hpp"
 #include <array>
 #include <cstdint>
 #include <cstdio>
@@ -36,7 +37,7 @@
 #include <QTranslator>
 #include "ElaTheme.h"
 
-namespace ShijimaManagerInternal {
+namespace ShijimaManagerUiInternal {
 
 QString colorToString(QColor const& color) {
     auto rgb = color.toRgb();
@@ -48,6 +49,10 @@ QString colorToString(QColor const& color) {
     return QString { &buf[0] };
 }
 
+}
+
+namespace ShijimaManagerRuntimeInternal {
+
 void dispatchToMainThread(std::function<void()> callback) {
     QTimer *timer = new QTimer;
     timer->moveToThread(qApp->thread());
@@ -58,6 +63,10 @@ void dispatchToMainThread(std::function<void()> callback) {
     });
     QMetaObject::invokeMethod(timer, "start", Qt::QueuedConnection, Q_ARG(int, 0));
 }
+
+}
+
+namespace ShijimaManagerUiInternal {
 
 void applyMascotListTheme(QListWidget& listWidget) {
     auto mode = eTheme->getThemeMode();
@@ -179,7 +188,7 @@ void ShijimaManager::deleteAction() {
 void ShijimaManager::updateSandboxBackground() {
     if (m_ui->sandboxWidget != nullptr) {
         m_ui->sandboxWidget->setStyleSheet("#sandboxWindow { background-color: " +
-            ShijimaManagerInternal::colorToString(m_ui->sandboxBackground) + "; }");
+            ShijimaManagerUiInternal::colorToString(m_ui->sandboxBackground) + "; }");
     }
 }
 
@@ -290,5 +299,5 @@ void ShijimaManager::switchLanguage(const QString &langCode) {
 void ShijimaManager::retranslateUi() {
     setWindowTitle(tr(APP_NAME " \u2014 Mascot Manager"));
     updateStatusBar();
-    ShijimaManagerInternal::refreshTrayMenu(this);
+    ShijimaManagerUiInternal::refreshTrayMenu(this);
 }

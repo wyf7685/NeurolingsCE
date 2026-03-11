@@ -18,23 +18,5 @@
 
 #pragma once
 
-#include <functional>
-#include <QString>
 #include "runtime/ShijimaManagerRuntimeState.hpp"
 #include "ui/ShijimaManagerUiState.hpp"
-
-class QColor;
-class QListWidget;
-class ShijimaManager;
-
-namespace ShijimaManagerInternal {
-
-constexpr int kSubtickCount = 4;
-
-QString colorToString(QColor const& color);
-void dispatchToMainThread(std::function<void()> callback);
-void applyMascotListTheme(QListWidget& listWidget);
-void refreshTrayMenu(ShijimaManager *manager);
-void setupTrayIcon(ShijimaManager *manager);
-
-}

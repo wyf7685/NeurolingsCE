@@ -20,7 +20,7 @@
 #include <httplib.h>
 #include "shijima-qt/ShijimaManager.hpp"
 #include "shijima-qt/MascotData.hpp"
-#include "shijima-qt/ShijimaWidget.hpp"
+#include "shijima-qt/ui/mascot/ShijimaWidget.hpp"
 #include <thread>
 #include <iostream>
 #include <QJsonArray>

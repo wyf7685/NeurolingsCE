@@ -17,7 +17,7 @@
 //
 
 #include "shijima-qt/ui/dialogs/inspector/ShimejiInspectorDialog.hpp"
-#include "shijima-qt/ShijimaWidget.hpp"
+#include "shijima-qt/ui/mascot/ShijimaWidget.hpp"
 #include <QFormLayout>
 #include "ElaTheme.h"
 

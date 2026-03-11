@@ -169,16 +169,17 @@ target_sources(NeurolingsCE PRIVATE
   src/app/core/assets/AssetLoader.cc
   src/app/ui/menus/ShijimaContextMenu.cc
   src/app/ui/menus/ShijimaContextMenuActions.cc
-  src/app/ShijimaManager.cc
   src/app/core/audio/SoundEffectManager.cc
   src/app/core/http/ShijimaHttpApi.cc
   src/app/core/import/SimpleZipImporter.cc
   src/app/runtime/ShijimaManagerEnvironment.cc
   src/app/runtime/ShijimaManagerImport.cc
+  src/app/runtime/ShijimaManagerLifecycle.cc
   src/app/runtime/ShijimaManagerMascots.cc
   src/app/ui/mascot/ShijimaWidgetInteraction.cc
   src/app/ui/mascot/ShijimaWidgetLifecycle.cc
   src/app/ui/mascot/ShijimaWidgetRendering.cc
+  src/app/ui/ShijimaManagerWindow.cc
   src/app/ui/ShijimaManagerActions.cc
   src/app/ui/dialogs/common/ForcedProgressDialog.cc
   src/app/ui/dialogs/inspector/ShimejiInspectorDialog.cc
@@ -196,6 +197,7 @@ target_sources(NeurolingsCE PRIVATE
 
   # Headers with Q_OBJECT (needed for AUTOMOC)
   include/shijima-qt/ShijimaManager.hpp
+  include/shijima-qt/ui/mascot/ShijimaWidget.hpp
   include/shijima-qt/ui/menus/ShijimaContextMenu.hpp
   include/shijima-qt/ui/dialogs/licenses/ShijimaLicensesDialog.hpp
   include/shijima-qt/ui/dialogs/inspector/ShimejiInspectorDialog.hpp

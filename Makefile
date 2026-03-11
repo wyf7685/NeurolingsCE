@@ -10,13 +10,14 @@ SOURCES = src/app/main.cc \
 	src/app/core/assets/AssetLoader.cc \
 	src/app/ui/menus/ShijimaContextMenu.cc \
 	src/app/ui/menus/ShijimaContextMenuActions.cc \
-	src/app/ShijimaManager.cc \
 	src/app/core/audio/SoundEffectManager.cc \
 	src/app/core/http/ShijimaHttpApi.cc \
 	src/app/core/import/SimpleZipImporter.cc \
 	src/app/runtime/ShijimaManagerEnvironment.cc \
 	src/app/runtime/ShijimaManagerImport.cc \
+	src/app/runtime/ShijimaManagerLifecycle.cc \
 	src/app/runtime/ShijimaManagerMascots.cc \
+	src/app/ui/ShijimaManagerWindow.cc \
 	src/app/ui/mascot/ShijimaWidgetInteraction.cc \
 	src/app/ui/mascot/ShijimaWidgetLifecycle.cc \
 	src/app/ui/mascot/ShijimaWidgetRendering.cc \

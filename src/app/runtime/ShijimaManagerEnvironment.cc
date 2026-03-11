@@ -17,8 +17,8 @@
 //
 
 #include "shijima-qt/ShijimaManager.hpp"
-#include "shijima-qt/ShijimaWidget.hpp"
-#include "../ShijimaManagerInternal.hpp"
+#include "shijima-qt/ui/mascot/ShijimaWidget.hpp"
+#include "ShijimaManagerRuntimeInternal.hpp"
 #include <cmath>
 #include <iostream>
 #include <QCursor>
@@ -193,7 +193,7 @@ void ShijimaManager::updateEnvironment(QScreen *screen) {
 
     int x = cursor.x(), y = cursor.y();
     env->cursor = { (double)x, (double)y, x - env->cursor.x, y - env->cursor.y };
-    env->subtick_count = ShijimaManagerInternal::kSubtickCount;
+    env->subtick_count = ShijimaManagerRuntimeInternal::kSubtickCount;
     env->set_scale(1.0 / std::sqrt(m_runtime->userScale));
 }
 

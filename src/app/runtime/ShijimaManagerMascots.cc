@@ -18,8 +18,8 @@
 
 #include "shijima-qt/ShijimaManager.hpp"
 #include "shijima-qt/MascotData.hpp"
-#include "shijima-qt/ShijimaWidget.hpp"
-#include "../ShijimaManagerInternal.hpp"
+#include "shijima-qt/ui/mascot/ShijimaWidget.hpp"
+#include "../ui/ShijimaManagerUiInternal.hpp"
 #include <filesystem>
 #include <iostream>
 #include <optional>
@@ -144,7 +144,7 @@ void ShijimaManager::reloadMascot(QString const& name) {
     }
 
     m_runtime->listItemsToRefresh.insert(name);
-    ShijimaManagerInternal::refreshTrayMenu(this);
+    ShijimaManagerUiInternal::refreshTrayMenu(this);
 }
 
 void ShijimaManager::refreshListWidget() {

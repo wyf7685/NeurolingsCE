@@ -17,7 +17,7 @@
 //
 
 #include "shijima-qt/ShijimaManager.hpp"
-#include "../ShijimaManagerInternal.hpp"
+#include "ShijimaManagerUiInternal.hpp"
 #include <QApplication>
 #include <QCoreApplication>
 #include <QMenu>
@@ -66,7 +66,7 @@ QIcon makeTrayIconFallback(QWidget *widget) {
 
 }
 
-namespace ShijimaManagerInternal {
+namespace ShijimaManagerUiInternal {
 
 void refreshTrayMenu(ShijimaManager *manager) {
     if (g_trayMenu == nullptr || manager == nullptr) {
