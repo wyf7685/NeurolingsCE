@@ -8,12 +8,19 @@
 #   APPIMAGE_TARGET      - CMake target to package (e.g. NeurolingsCE)
 #   APPIMAGE_SOURCE_DIR  - Absolute path to the project root
 #   APPIMAGE_BINARY_DIR  - Absolute path to the build directory
+#   APPIMAGE_NO_STRIP    - If true, do not strip debug symbols from the AppImage
 
 foreach(_var APPIMAGE_TARGET APPIMAGE_SOURCE_DIR APPIMAGE_BINARY_DIR)
   if(NOT DEFINED ${_var})
     message(FATAL_ERROR "cmake/AppImage.cmake: ${_var} must be set before include()-ing this file.")
   endif()
 endforeach()
+
+if(NOT DEFINED APPIMAGE_NO_STRIP OR NOT APPIMAGE_NO_STRIP)
+  set(_no_strip_env "NO_STRIP=0")
+else()
+  set(_no_strip_env "NO_STRIP=1")
+endif()
 
 # -------------------------------------------------------------------------
 # Architecture detection
@@ -49,6 +56,9 @@ set(_icon_file     "${APPIMAGE_SOURCE_DIR}/src/packaging/io.github.qingchenyoufo
 get_filename_component(_qt_prefix "${Qt6_DIR}/../../.." ABSOLUTE)
 set(_qt_bin_dir "${_qt_prefix}/bin")
 
+set(_download_linuxdeploy_script "${APPIMAGE_SOURCE_DIR}/cmake/DownloadLinuxdeploy.cmake")
+set(_rename_appimage_script "${APPIMAGE_SOURCE_DIR}/cmake/RenameAppImage.cmake")
+
 # -------------------------------------------------------------------------
 # 'appimage' target
 # -------------------------------------------------------------------------
@@ -57,7 +67,7 @@ add_custom_target(appimage
   COMMAND ${CMAKE_COMMAND}
     -DTOOL_DIR=${_tool_dir}
     -DARCH=${_appimage_arch}
-    -P ${APPIMAGE_SOURCE_DIR}/cmake/DownloadLinuxdeploy.cmake
+    -P ${_download_linuxdeploy_script}
 
   # 2. Remove stale AppDir from a previous run
   COMMAND ${CMAKE_COMMAND} -E rm -rf "${_appdir}"
@@ -72,7 +82,7 @@ add_custom_target(appimage
   #    where the sidecar plugins live when they are not on PATH.
   COMMAND ${CMAKE_COMMAND} -E env
     APPIMAGE_EXTRACT_AND_RUN=1
-    NO_STRIP=1
+    ${_no_strip_env}
     QMAKE=${_qt_bin_dir}/qmake6
     LINUXDEPLOY_PLUGIN_QT=${_plugin_qt}
     LINUXDEPLOY_PLUGIN_APPIMAGE=${_plugin_appimage}
@@ -89,10 +99,10 @@ add_custom_target(appimage
   COMMAND ${CMAKE_COMMAND}
     -DSEARCH_DIR=${APPIMAGE_BINARY_DIR}
     -DOUTPUT=${_output}
-    -P ${APPIMAGE_SOURCE_DIR}/cmake/RenameAppImage.cmake
+    -P ${_rename_appimage_script}
 
   WORKING_DIRECTORY "${APPIMAGE_BINARY_DIR}"
-  DEPENDS ${APPIMAGE_TARGET}
+  DEPENDS ${APPIMAGE_TARGET} "${_download_linuxdeploy_script}" "${_rename_appimage_script}"
   VERBATIM
   USES_TERMINAL
   COMMENT "Building AppImage for ${APPIMAGE_TARGET} (arch: ${_appimage_arch})"
