@@ -100,6 +100,9 @@ private:
     void loadAllMascots();
     void refreshListWidget();
     void setupNavigation();
+    void setupHomePage();
+    void setupSettingsPage();
+    void setupAboutPage();
     void importAction();
     void deleteAction();
     void updateSandboxBackground();

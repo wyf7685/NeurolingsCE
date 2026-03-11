@@ -21,8 +21,11 @@ SOURCES = src/app/main.cc \
 	DefaultMascot.cc \
 	src/app/ShijimaHttpApi.cc \
 	src/app/ui/ShijimaManagerActions.cc \
-	src/app/ui/ShijimaManagerPages.cc \
 	src/app/ui/ShijimaManagerTray.cc \
+	src/app/ui/interface/ShijimaManagerAboutPage.cc \
+	src/app/ui/interface/ShijimaManagerHomePage.cc \
+	src/app/ui/interface/ShijimaManagerInterface.cc \
+	src/app/ui/interface/ShijimaManagerSettingsPage.cc \
 	src/app/cli.cc \
 	src/app/SpeechBubbleWidget.cc \
 	src/app/SimpleZipImporter.cc \
