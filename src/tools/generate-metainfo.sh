@@ -13,7 +13,6 @@ fi
 # Read version from VERSION.txt
 VERSION=$(grep "^VERSION=" VERSION.txt 2>/dev/null | cut -d= -f2 || echo "0.2.0")
 RELEASE_DATE=$(grep "^RELEASE_DATE=" VERSION.txt 2>/dev/null | cut -d= -f2 || echo "2026-03-08")
-RELEASE_DATE=$(grep "^RELEASE_DATE=" VERSION.txt 2>/dev/null | cut -d= -f2 || echo "2026-02-26")
 
 # Substitute variables in template
 sed -e "s/@VERSION@/${VERSION}/g" \

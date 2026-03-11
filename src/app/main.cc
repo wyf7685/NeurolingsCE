@@ -45,7 +45,6 @@ int main(int argc, char **argv) {
     QApplication app(argc, argv);
     app.setApplicationName(QStringLiteral(APP_NAME));
     app.setApplicationDisplayName(QStringLiteral(APP_DISPLAY_NAME));
-    app.setApplicationDisplayName("NeurolingsCE[Shijima-Qt Edition]");
     AppLog::initialize(&app);
     eApp->init();
     {

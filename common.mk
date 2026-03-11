@@ -11,11 +11,6 @@ APP_BUNDLE_NAME := $(shell grep "^APP_BUNDLE_NAME=" VERSION.txt 2>/dev/null | cu
 APP_ICON_NAME := $(shell grep "^APP_ICON_NAME=" VERSION.txt 2>/dev/null | cut -d= -f2 || echo "io.github.qingchenyouforcc.NeurolingsCE")
 APP_DESKTOP_CATEGORIES := $(shell grep "^APP_DESKTOP_CATEGORIES=" VERSION.txt 2>/dev/null | cut -d= -f2 || echo "Game")
 
-
-QT_VERSION := 6
-NEUROLINGSCE_VERSION := $(shell grep "^VERSION=" VERSION.txt 2>/dev/null | cut -d= -f2 || echo "0.1.0")
-
-
 QT_VERSION := 6
 
 ifeq ($(QT_VERSION),6)

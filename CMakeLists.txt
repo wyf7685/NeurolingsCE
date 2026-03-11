@@ -309,7 +309,7 @@ target_include_directories(NeurolingsCE PRIVATE
 target_compile_definitions(NeurolingsCE PRIVATE
   NEUROLINGSCE_VERSION="${PROJECT_VERSION}"
   APP_NAME="NeurolingsCE"
-  APP_DISPLAY_NAME="NeurolingsCE"
+  APP_DISPLAY_NAME="NeurolingsCE[Shijima-Qt Edition]"
   $<$<BOOL:${SHIJIMA_USE_QTMULTIMEDIA}>:SHIJIMA_USE_QTMULTIMEDIA=1>
   $<$<NOT:$<BOOL:${SHIJIMA_USE_QTMULTIMEDIA}>>:SHIJIMA_USE_QTMULTIMEDIA=0>
 )
@@ -348,7 +348,6 @@ if(MSVC)
     "PATH=$<TARGET_FILE_DIR:Qt6::Core>\;%PATH%")
 endif()
 
-target_link_libraries(NeurolingsCE PRIVATE ElaWidgetTools)
 target_compile_definitions(NeurolingsCE PRIVATE ELAWIDGETTOOLS_LIBRARY=0)
 
 target_link_libraries(NeurolingsCE PRIVATE shimejifinder)
