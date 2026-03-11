@@ -351,19 +351,11 @@ set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/miniz/miniz.c PROPERTIES
 if(SHIJIMA_WITH_SHIMEJIFINDER)
   if(SHIJIMA_WITH_LIBSHIMEJIFINDER)
     target_link_libraries(NeurolingsCE PRIVATE shimejifinder)
-    # target_compile_definitions(NeurolingsCE PRIVATE
-    #   SHIMEJIFINDER_NO_LIBARCHIVE=0
-    #   # SHIMEJIFINDER_NO_LIBUNARR=0
-    # )
     message(STATUS "Building with bundled libshimejifinder (archive import support enabled).")
   else()
     message(FATAL_ERROR "SHIJIMA_WITH_SHIMEJIFINDER=ON requires SHIJIMA_WITH_LIBSHIMEJIFINDER=ON for now.")
   endif()
 else()
-  # target_compile_definitions(NeurolingsCE PRIVATE
-  #   SHIMEJIFINDER_NO_LIBARCHIVE=1
-  #   # SHIMEJIFINDER_NO_LIBUNARR=1
-  # )
   message(STATUS "Archive import support disabled (SHIJIMA_WITH_SHIMEJIFINDER=OFF).")
 endif()
 
