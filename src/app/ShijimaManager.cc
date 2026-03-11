@@ -19,6 +19,7 @@
 #include "shijima-qt/ShijimaManager.hpp"
 #include "ShijimaManagerInternal.hpp"
 #include <iostream>
+#include <memory>
 #include <QCloseEvent>
 #include <QDir>
 #include <QFile>
@@ -50,11 +51,11 @@ void ShijimaManager::finalize() {
 }
 
 std::unique_lock<std::mutex> ShijimaManager::acquireLock() {
-    return std::unique_lock<std::mutex> { m_mutex };
+    return std::unique_lock<std::mutex> { m_runtime->mutex };
 }
 
 QString const& ShijimaManager::mascotsPath() {
-    return m_mascotsPath;
+    return m_runtime->mascotsPath;
 }
 
 ShijimaManager::~ShijimaManager() {
@@ -66,40 +67,38 @@ ShijimaManager::~ShijimaManager() {
 
 void ShijimaManager::abortPendingCallbacks() {
     auto lock = acquireLock();
-    m_shuttingDown.store(true);
-    m_tickCallbacks.clear();
-    m_hasTickCallbacks = false;
-    m_tickCallbackCompletion.notify_all();
+    m_runtime->shuttingDown.store(true);
+    m_runtime->tickCallbacks.clear();
+    m_runtime->hasTickCallbacks = false;
+    m_runtime->tickCallbackCompletion.notify_all();
 }
 
 void ShijimaManager::onTickSync(std::function<void(ShijimaManager *)> callback) {
-    if (m_shuttingDown.load()) {
+    if (m_runtime->shuttingDown.load()) {
         return;
     }
 
     auto lock = acquireLock();
-    if (m_shuttingDown.load()) {
+    if (m_runtime->shuttingDown.load()) {
         return;
     }
 
-    m_hasTickCallbacks = true;
-    m_tickCallbacks.push_back(callback);
-    m_tickCallbackCompletion.wait(lock, [this]{
-        return m_shuttingDown.load() || m_tickCallbacks.empty();
+    m_runtime->hasTickCallbacks = true;
+    m_runtime->tickCallbacks.push_back(callback);
+    m_runtime->tickCallbackCompletion.wait(lock, [this]{
+        return m_runtime->shuttingDown.load() || m_runtime->tickCallbacks.empty();
     });
 }
 
 ShijimaManager::ShijimaManager(QWidget *parent):
     PlatformWidget(parent),
-    m_sandboxWidget(nullptr),
+    m_runtime(std::make_unique<ShijimaManagerRuntimeState>()),
+    m_ui(std::make_unique<ShijimaManagerUiState>()),
     m_settings("pixelomer", "Shijima-Qt"),
-    m_windowedModeAction(nullptr),
-    m_idCounter(0), m_httpApi(this),
-    m_hasTickCallbacks(false),
-    m_translator(nullptr),
-    m_qtTranslator(nullptr),
-    m_currentLanguage("en")
+    m_httpApi(this)
 {
+    m_ui->listWidget = new QListWidget(this);
+
     for (auto screen : QGuiApplication::screens()) {
         screenAdded(screen);
     }
@@ -126,16 +125,16 @@ ShijimaManager::ShijimaManager(QWidget *parent):
         );
         readme.close();
     }
-    m_mascotsPath = mascotsPath;
-    std::cout << "Mascots path: " << m_mascotsPath.toStdString() << std::endl;
+    m_runtime->mascotsPath = mascotsPath;
+    std::cout << "Mascots path: " << m_runtime->mascotsPath.toStdString() << std::endl;
 
     loadDefaultMascot();
     loadAllMascots();
     setAcceptDrops(true);
 
-    m_mascotTimer = startTimer(40 / ShijimaManagerInternal::kSubtickCount);
-    if (m_windowObserver.tickFrequency() > 0) {
-        m_windowObserverTimer = startTimer(m_windowObserver.tickFrequency());
+    m_runtime->mascotTimer = startTimer(40 / ShijimaManagerInternal::kSubtickCount);
+    if (m_runtime->windowObserver.tickFrequency() > 0) {
+        m_runtime->windowObserverTimer = startTimer(m_runtime->windowObserver.tickFrequency());
     }
 
     setUserInfoCardVisible(false);
@@ -145,7 +144,7 @@ ShijimaManager::ShijimaManager(QWidget *parent):
     setMinimumHeight(450);
     connect(this, &ElaWindow::closeButtonClicked, this, [this]() {
 #if defined(_WIN32)
-        if (m_mascots.size() == 0) {
+        if (m_runtime->mascots.size() == 0) {
             askClose();
         } else {
             setManagerVisible(false);
@@ -163,30 +162,30 @@ ShijimaManager::ShijimaManager(QWidget *parent):
     connect(QGuiApplication::styleHints(), &QStyleHints::colorSchemeChanged,
         this, syncTheme);
 
-    connect(&m_listWidget, &QListWidget::itemDoubleClicked,
+    connect(m_ui->listWidget, &QListWidget::itemDoubleClicked,
         this, &ShijimaManager::itemDoubleClicked);
-    m_listWidget.setIconSize({ 64, 64 });
-    m_listWidget.installEventFilter(this);
-    m_listWidget.setSelectionMode(QListWidget::ExtendedSelection);
-    ShijimaManagerInternal::applyMascotListTheme(m_listWidget);
+    m_ui->listWidget->setIconSize({ 64, 64 });
+    m_ui->listWidget->installEventFilter(this);
+    m_ui->listWidget->setSelectionMode(QListWidget::ExtendedSelection);
+    ShijimaManagerInternal::applyMascotListTheme(*m_ui->listWidget);
     connect(eTheme, &ElaTheme::themeModeChanged, this, [this]() {
-        ShijimaManagerInternal::applyMascotListTheme(m_listWidget);
+        ShijimaManagerInternal::applyMascotListTheme(*m_ui->listWidget);
     });
 
     setWindowTitle(tr(APP_NAME " \u2014 Mascot Manager"));
     auto *elaStatusBar = new ElaStatusBar(this);
     setStatusBar(elaStatusBar);
-    m_statusLabel = new QLabel(this);
-    elaStatusBar->addWidget(m_statusLabel, 1);
+    m_ui->statusLabel = new QLabel(this);
+    elaStatusBar->addWidget(m_ui->statusLabel, 1);
     updateStatusBar();
 
     QString savedLang = m_settings.value("language", "en").toString();
     if (savedLang != "en") {
-        m_currentLanguage = "en";
+        m_ui->currentLanguage = "en";
         switchLanguage(savedLang);
     }
 
-    m_detachThreshold = m_settings.value("detachThreshold",
+    m_runtime->detachThreshold = m_settings.value("detachThreshold",
         QVariant::fromValue(30.0)).toDouble();
 
     setupNavigation();
@@ -202,7 +201,7 @@ void ShijimaManager::closeEvent(QCloseEvent *event) {
     if (!m_allowClose) {
         event->ignore();
 #if defined(_WIN32)
-        if (m_mascots.size() == 0) {
+        if (m_runtime->mascots.size() == 0) {
             askClose();
         }
         else {
@@ -216,13 +215,13 @@ void ShijimaManager::closeEvent(QCloseEvent *event) {
 
     abortPendingCallbacks();
     m_httpApi.stop();
-    if (m_mascotTimer != 0) {
-        killTimer(m_mascotTimer);
-        m_mascotTimer = 0;
+    if (m_runtime->mascotTimer != 0) {
+        killTimer(m_runtime->mascotTimer);
+        m_runtime->mascotTimer = 0;
     }
-    if (m_windowObserverTimer != 0) {
-        killTimer(m_windowObserverTimer);
-        m_windowObserverTimer = 0;
+    if (m_runtime->windowObserverTimer != 0) {
+        killTimer(m_runtime->windowObserverTimer);
+        m_runtime->windowObserverTimer = 0;
     }
     event->accept();
 #else
@@ -233,11 +232,11 @@ void ShijimaManager::closeEvent(QCloseEvent *event) {
 
 void ShijimaManager::timerEvent(QTimerEvent *event) {
     int timerId = event->timerId();
-    if (timerId == m_mascotTimer) {
+    if (timerId == m_runtime->mascotTimer) {
         tick();
     }
-    else if (timerId == m_windowObserverTimer) {
-        m_windowObserver.tick();
+    else if (timerId == m_runtime->windowObserverTimer) {
+        m_runtime->windowObserver.tick();
     }
 }
 
@@ -246,7 +245,7 @@ bool ShijimaManager::eventFilter(QObject *obj, QEvent *event) {
         QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
         auto key = keyEvent->key();
         if (key == Qt::Key::Key_Return || key == Qt::Key::Key_Enter) {
-            for (auto item : m_listWidget.selectedItems()) {
+            for (auto item : m_ui->listWidget->selectedItems()) {
                 itemDoubleClicked(item);
             }
             return true;

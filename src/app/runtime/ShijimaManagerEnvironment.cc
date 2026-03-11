@@ -17,6 +17,7 @@
 //
 
 #include "shijima-qt/ShijimaManager.hpp"
+#include "shijima-qt/ShijimaWidget.hpp"
 #include "../ShijimaManagerInternal.hpp"
 #include <cmath>
 #include <iostream>
@@ -26,26 +27,26 @@
 #include <QWidget>
 
 void ShijimaManager::screenAdded(QScreen *screen) {
-    if (!m_env.contains(screen)) {
+    if (!m_runtime->env.contains(screen)) {
         auto env = std::make_shared<shijima::mascot::environment>();
-        m_env[screen] = env;
-        m_reverseEnv[env.get()] = screen;
+        m_runtime->env[screen] = env;
+        m_runtime->reverseEnv[env.get()] = screen;
         auto primary = QGuiApplication::primaryScreen();
-        if (screen != primary && m_env.contains(primary)) {
-            m_env[screen]->allows_breeding = m_env[primary]->allows_breeding;
+        if (screen != primary && m_runtime->env.contains(primary)) {
+            m_runtime->env[screen]->allows_breeding = m_runtime->env[primary]->allows_breeding;
         }
     }
 }
 
 void ShijimaManager::screenRemoved(QScreen *screen) {
-    if (m_env.contains(screen) && screen != nullptr) {
+    if (m_runtime->env.contains(screen) && screen != nullptr) {
         auto primary = QGuiApplication::primaryScreen();
-        for (auto &mascot : m_mascots) {
-            mascot->setEnv(m_env[primary]);
+        for (auto &mascot : m_runtime->mascots) {
+            mascot->setEnv(m_runtime->env[primary]);
             mascot->mascot().reset_position();
         }
-        m_reverseEnv.remove(m_env[primary].get());
-        m_env.remove(screen);
+        m_runtime->reverseEnv.remove(m_runtime->env[primary].get());
+        m_runtime->env.remove(screen);
     }
 }
 
@@ -54,8 +55,8 @@ void ShijimaManager::setWindowedMode(bool windowedMode) {
         return;
     }
 
-    m_windowedModeAction->setChecked(windowedMode);
-    for (auto mascot : m_mascots) {
+    m_ui->windowedModeAction->setChecked(windowedMode);
+    for (auto mascot : m_runtime->mascots) {
         mascot->close();
         mascot->setParent(nullptr);
     }
@@ -67,36 +68,36 @@ void ShijimaManager::setWindowedMode(bool windowedMode) {
 #else
         parent = this;
 #endif
-        m_sandboxWidget = new QWidget { parent, Qt::Window };
-        m_sandboxWidget->setAttribute(Qt::WA_StyledBackground, true);
-        m_sandboxWidget->resize(640, 480);
-        m_sandboxWidget->setObjectName("sandboxWindow");
-        m_sandboxWidget->show();
+        m_ui->sandboxWidget = new QWidget { parent, Qt::Window };
+        m_ui->sandboxWidget->setAttribute(Qt::WA_StyledBackground, true);
+        m_ui->sandboxWidget->resize(640, 480);
+        m_ui->sandboxWidget->setObjectName("sandboxWindow");
+        m_ui->sandboxWidget->show();
         updateSandboxBackground();
     }
     else {
-        m_sandboxWidget->close();
-        delete m_sandboxWidget;
-        m_sandboxWidget = nullptr;
+        m_ui->sandboxWidget->close();
+        delete m_ui->sandboxWidget;
+        m_ui->sandboxWidget = nullptr;
     }
 
     updateEnvironment();
     std::shared_ptr<shijima::mascot::environment> env;
     if (windowedMode) {
-        env = m_env[nullptr];
+        env = m_runtime->env[nullptr];
     }
     else {
-        env = m_env[mascotScreen()];
+        env = m_runtime->env[mascotScreen()];
     }
 
-    for (auto &mascot : m_mascots) {
+    for (auto &mascot : m_runtime->mascots) {
         bool inspectorWasVisible = mascot->inspectorVisible();
         auto newMascot = new ShijimaWidget(*mascot, windowedMode,
             mascotParent());
         newMascot->setEnv(env);
         delete mascot;
         mascot = newMascot;
-        m_mascotsById[mascot->mascotId()] = mascot;
+        m_runtime->mascotsById[mascot->mascotId()] = mascot;
         mascot->mascot().reset_position();
         mascot->show();
         if (inspectorWasVisible) {
@@ -106,17 +107,17 @@ void ShijimaManager::setWindowedMode(bool windowedMode) {
 }
 
 void ShijimaManager::updateEnvironment(QScreen *screen) {
-    if (!m_env.contains(screen)) {
+    if (!m_runtime->env.contains(screen)) {
         return;
     }
 
-    auto &env = m_env[screen];
+    auto &env = m_runtime->env[screen];
     QRect geometry, available;
     QPoint cursor;
     if (screen == nullptr) {
-        if (m_sandboxWidget != nullptr) {
-            geometry = m_sandboxWidget->geometry();
-            cursor = m_sandboxWidget->cursor().pos() - geometry.topLeft();
+        if (m_ui->sandboxWidget != nullptr) {
+            geometry = m_ui->sandboxWidget->geometry();
+            cursor = m_ui->sandboxWidget->cursor().pos() - geometry.topLeft();
             geometry.setCoords(0, 0, geometry.width(), geometry.height());
             available = geometry;
         }
@@ -151,35 +152,35 @@ void ShijimaManager::updateEnvironment(QScreen *screen) {
         (double)geometry.left() };
     env->ceiling = { (double)geometry.top(), (double)geometry.left(),
         (double)geometry.right() };
-    if (!windowedMode() && m_currentWindow.available &&
-        std::fabs(m_currentWindow.x) > 1 && std::fabs(m_currentWindow.y) > 1)
+    if (!windowedMode() && m_runtime->currentWindow.available &&
+        std::fabs(m_runtime->currentWindow.x) > 1 && std::fabs(m_runtime->currentWindow.y) > 1)
     {
-        env->active_ie = { m_currentWindow.y,
-            m_currentWindow.x + m_currentWindow.width,
-            m_currentWindow.y + m_currentWindow.height,
-            m_currentWindow.x };
-        if (m_previousWindow.available &&
-            m_previousWindow.uid == m_currentWindow.uid)
+        env->active_ie = { m_runtime->currentWindow.y,
+            m_runtime->currentWindow.x + m_runtime->currentWindow.width,
+            m_runtime->currentWindow.y + m_runtime->currentWindow.height,
+            m_runtime->currentWindow.x };
+        if (m_runtime->previousWindow.available &&
+            m_runtime->previousWindow.uid == m_runtime->currentWindow.uid)
         {
-            env->active_ie.dy = m_currentWindow.y - m_previousWindow.y;
+            env->active_ie.dy = m_runtime->currentWindow.y - m_runtime->previousWindow.y;
             if (env->active_ie.dy == 0) {
-                env->active_ie.dy = m_currentWindow.height - m_previousWindow.height;
+                env->active_ie.dy = m_runtime->currentWindow.height - m_runtime->previousWindow.height;
             }
-            env->active_ie.dx = m_currentWindow.x - m_previousWindow.x;
+            env->active_ie.dx = m_runtime->currentWindow.x - m_runtime->previousWindow.x;
             if (env->active_ie.dx == 0) {
-                env->active_ie.dx = m_currentWindow.width - m_previousWindow.width;
+                env->active_ie.dx = m_runtime->currentWindow.width - m_runtime->previousWindow.width;
             }
 
-            if (m_detachThreshold > 0) {
+            if (m_runtime->detachThreshold > 0) {
                 double speed = std::sqrt(env->active_ie.dx * env->active_ie.dx
                     + env->active_ie.dy * env->active_ie.dy);
-                double upperBound = m_detachThreshold * 3.0;
+                double upperBound = m_runtime->detachThreshold * 3.0;
                 if (speed >= upperBound) {
                     env->active_ie = { -50, -50, -50, -50 };
                 }
-                else if (speed > m_detachThreshold) {
-                    double ratio = 1.0 - (speed - m_detachThreshold)
-                        / (upperBound - m_detachThreshold);
+                else if (speed > m_runtime->detachThreshold) {
+                    double ratio = 1.0 - (speed - m_runtime->detachThreshold)
+                        / (upperBound - m_runtime->detachThreshold);
                     env->active_ie.dx *= ratio;
                     env->active_ie.dy *= ratio;
                 }
@@ -193,11 +194,11 @@ void ShijimaManager::updateEnvironment(QScreen *screen) {
     int x = cursor.x(), y = cursor.y();
     env->cursor = { (double)x, (double)y, x - env->cursor.x, y - env->cursor.y };
     env->subtick_count = ShijimaManagerInternal::kSubtickCount;
-    env->set_scale(1.0 / std::sqrt(m_userScale));
+    env->set_scale(1.0 / std::sqrt(m_runtime->userScale));
 }
 
 void ShijimaManager::updateEnvironment() {
-    m_currentWindow = m_windowObserver.getActiveWindow();
+    m_runtime->currentWindow = m_runtime->windowObserver.getActiveWindow();
     if (windowedMode()) {
         updateEnvironment(nullptr);
     }
@@ -206,16 +207,16 @@ void ShijimaManager::updateEnvironment() {
             updateEnvironment(screen);
         }
     }
-    m_previousWindow = m_currentWindow;
+    m_runtime->previousWindow = m_runtime->currentWindow;
 }
 
 bool ShijimaManager::windowedMode() {
-    return m_sandboxWidget != nullptr;
+    return m_ui->sandboxWidget != nullptr;
 }
 
 QWidget *ShijimaManager::mascotParent() {
     if (windowedMode()) {
-        return m_sandboxWidget;
+        return m_ui->sandboxWidget;
     }
     return this;
 }

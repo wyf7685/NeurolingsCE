@@ -17,11 +17,14 @@
 //
 
 #include "shijima-qt/ShijimaManager.hpp"
+#include "shijima-qt/MascotData.hpp"
+#include "shijima-qt/ShijimaWidget.hpp"
 #include "../ShijimaManagerInternal.hpp"
 #include <filesystem>
 #include <iostream>
 #include <optional>
 #include <stdexcept>
+#include <QDir>
 #include <QDirIterator>
 #include <QGuiApplication>
 #include <QListWidget>
@@ -31,13 +34,13 @@
 using namespace shijima;
 
 void ShijimaManager::killAll() {
-    for (auto mascot : m_mascots) {
+    for (auto mascot : m_runtime->mascots) {
         mascot->markForDeletion();
     }
 }
 
 void ShijimaManager::killAll(QString const& name) {
-    for (auto mascot : m_mascots) {
+    for (auto mascot : m_runtime->mascots) {
         if (mascot->mascotName() == name) {
             mascot->markForDeletion();
         }
@@ -45,7 +48,7 @@ void ShijimaManager::killAll(QString const& name) {
 }
 
 void ShijimaManager::killAllButOne(ShijimaWidget *widget) {
-    for (auto mascot : m_mascots) {
+    for (auto mascot : m_runtime->mascots) {
         if (widget == mascot) {
             continue;
         }
@@ -55,7 +58,7 @@ void ShijimaManager::killAllButOne(ShijimaWidget *widget) {
 
 void ShijimaManager::killAllButOne(QString const& name) {
     bool foundOne = false;
-    for (auto mascot : m_mascots) {
+    for (auto mascot : m_runtime->mascots) {
         if (mascot->mascotName() == name) {
             if (!foundOne) {
                 foundOne = true;
@@ -76,35 +79,35 @@ void ShijimaManager::loadData(MascotData *data) {
     tmpl.behaviors_xml = data->behaviorsXML().toStdString();
     tmpl.name = data->name().toStdString();
     tmpl.path = data->path().toStdString();
-    m_factory.register_template(tmpl);
-    m_loadedMascots.insert(data->name(), data);
-    m_loadedMascotsById.insert(data->id(), data);
+    m_runtime->factory.register_template(tmpl);
+    m_runtime->loadedMascots.insert(data->name(), data);
+    m_runtime->loadedMascotsById.insert(data->id(), data);
     std::cout << "Loaded mascot: " << data->name().toStdString() << std::endl;
 }
 
 void ShijimaManager::loadDefaultMascot() {
-    auto data = new MascotData { "@", m_idCounter++ };
+    auto data = new MascotData { "@", m_runtime->idCounter++ };
     loadData(data);
 }
 
 QMap<QString, MascotData *> const& ShijimaManager::loadedMascots() {
-    return m_loadedMascots;
+    return m_runtime->loadedMascots;
 }
 
 QMap<int, MascotData *> const& ShijimaManager::loadedMascotsById() {
-    return m_loadedMascotsById;
+    return m_runtime->loadedMascotsById;
 }
 
 std::list<ShijimaWidget *> const& ShijimaManager::mascots() {
-    return m_mascots;
+    return m_runtime->mascots;
 }
 
 std::map<int, ShijimaWidget *> const& ShijimaManager::mascotsById() {
-    return m_mascotsById;
+    return m_runtime->mascotsById;
 }
 
 void ShijimaManager::reloadMascot(QString const& name) {
-    if (m_loadedMascots.contains(name) && !m_loadedMascots[name]->deletable()) {
+    if (m_runtime->loadedMascots.contains(name) && !m_runtime->loadedMascots[name]->deletable()) {
         std::cout << "Refusing to unload mascot: " << name.toStdString()
             << std::endl;
         return;
@@ -113,8 +116,8 @@ void ShijimaManager::reloadMascot(QString const& name) {
     MascotData *newData = nullptr;
     try {
         newData = new MascotData {
-            m_mascotsPath + QDir::separator() + name + ".mascot",
-            m_idCounter++
+            m_runtime->mascotsPath + QDir::separator() + name + ".mascot",
+            m_runtime->idCounter++
         };
     }
     catch (std::exception &ex) {
@@ -122,13 +125,13 @@ void ShijimaManager::reloadMascot(QString const& name) {
         std::cerr << ex.what() << std::endl;
     }
 
-    if (m_loadedMascots.contains(name)) {
-        MascotData *oldData = m_loadedMascots[name];
-        m_factory.deregister_template(name.toStdString());
+    if (m_runtime->loadedMascots.contains(name)) {
+        MascotData *oldData = m_runtime->loadedMascots[name];
+        m_runtime->factory.deregister_template(name.toStdString());
         oldData->unloadCache();
         killAll(name);
-        m_loadedMascots.remove(name);
-        m_loadedMascotsById.remove(oldData->id());
+        m_runtime->loadedMascots.remove(name);
+        m_runtime->loadedMascotsById.remove(oldData->id());
         delete oldData;
         std::cout << "Unloaded mascot: " << name.toStdString() << std::endl;
     }
@@ -140,25 +143,25 @@ void ShijimaManager::reloadMascot(QString const& name) {
         loadData(newData);
     }
 
-    m_listItemsToRefresh.insert(name);
+    m_runtime->listItemsToRefresh.insert(name);
     ShijimaManagerInternal::refreshTrayMenu(this);
 }
 
 void ShijimaManager::refreshListWidget() {
-    m_listWidget.clear();
-    auto names = m_loadedMascots.keys();
+    m_ui->listWidget->clear();
+    auto names = m_runtime->loadedMascots.keys();
     names.sort(Qt::CaseInsensitive);
     for (auto &name : names) {
         auto item = new QListWidgetItem;
         item->setText(name);
-        item->setIcon(m_loadedMascots[name]->preview());
-        m_listWidget.addItem(item);
+        item->setIcon(m_runtime->loadedMascots[name]->preview());
+        m_ui->listWidget->addItem(item);
     }
-    m_listItemsToRefresh.clear();
+    m_runtime->listItemsToRefresh.clear();
 }
 
 void ShijimaManager::loadAllMascots() {
-    QDirIterator iter { m_mascotsPath, QDir::Dirs | QDir::NoDotAndDotDot,
+    QDirIterator iter { m_runtime->mascotsPath, QDir::Dirs | QDir::NoDotAndDotDot,
         QDirIterator::NoIteratorFlags };
     while (iter.hasNext()) {
         auto name = iter.nextFileInfo().fileName();
@@ -178,26 +181,26 @@ void ShijimaManager::reloadMascots(std::set<std::string> const& mascots) {
 }
 
 void ShijimaManager::tick() {
-    if (m_hasTickCallbacks) {
+    if (m_runtime->hasTickCallbacks) {
         auto lock = acquireLock();
-        for (auto &callback : m_tickCallbacks) {
+        for (auto &callback : m_runtime->tickCallbacks) {
             callback(this);
         }
-        m_tickCallbacks.clear();
-        m_hasTickCallbacks = false;
-        m_tickCallbackCompletion.notify_all();
+        m_runtime->tickCallbacks.clear();
+        m_runtime->hasTickCallbacks = false;
+        m_runtime->tickCallbackCompletion.notify_all();
     }
 
-    if (m_sandboxWidget != nullptr && !m_sandboxWidget->isVisible()) {
+    if (m_ui->sandboxWidget != nullptr && !m_ui->sandboxWidget->isVisible()) {
         setWindowedMode(false);
 #if !defined(__APPLE__)
-        if (m_mascots.size() == 0) {
+        if (m_runtime->mascots.size() == 0) {
             setManagerVisible(true);
         }
 #endif
     }
 
-    if (m_mascots.size() == 0) {
+    if (m_runtime->mascots.size() == 0) {
 #if !defined(__APPLE__)
         if (!windowedMode() && !m_wasVisible) {
             setManagerVisible(true);
@@ -208,7 +211,7 @@ void ShijimaManager::tick() {
 
     updateEnvironment();
 
-    for (auto iter = m_mascots.end(); iter != m_mascots.begin(); ) {
+    for (auto iter = m_runtime->mascots.end(); iter != m_runtime->mascots.begin(); ) {
         --iter;
         ShijimaWidget *shimeji = *iter;
         if (!shimeji->isVisible()) {
@@ -216,8 +219,8 @@ void ShijimaManager::tick() {
             delete shimeji;
             auto erasePos = iter;
             ++iter;
-            m_mascots.erase(erasePos);
-            m_mascotsById.erase(mascotId);
+            m_runtime->mascots.erase(erasePos);
+            m_runtime->mascotsById.erase(mascotId);
             continue;
         }
 
@@ -266,11 +269,11 @@ void ShijimaManager::tick() {
         auto &mascot = shimeji->mascot();
         auto &breedRequest = mascot.state->breed_request;
         if (mascot.state->dragging && !windowedMode()) {
-            auto oldScreen = m_reverseEnv[mascot.state->env.get()];
+            auto oldScreen = m_runtime->reverseEnv[mascot.state->env.get()];
             auto newScreen = QGuiApplication::screenAt(QPoint {
                 (int)mascot.state->anchor.x, (int)mascot.state->anchor.y });
             if (newScreen != nullptr && oldScreen != newScreen) {
-                mascot.state->env = m_env[newScreen];
+                mascot.state->env = m_runtime->env[newScreen];
             }
         }
         if (breedRequest.available) {
@@ -282,7 +285,7 @@ void ShijimaManager::tick() {
 
             std::optional<shijima::mascot::factory::product> product;
             try {
-                product = m_factory.spawn(breedRequest);
+                product = m_runtime->factory.spawn(breedRequest);
             }
             catch (std::exception &ex) {
                 std::cerr << "couldn't fulfill breed request for "
@@ -292,23 +295,23 @@ void ShijimaManager::tick() {
 
             if (product.has_value()) {
                 ShijimaWidget *child = new ShijimaWidget(
-                    m_loadedMascots[QString::fromStdString(breedRequest.name)],
-                    std::move(product->manager), m_idCounter++,
+                    m_runtime->loadedMascots[QString::fromStdString(breedRequest.name)],
+                    std::move(product->manager), m_runtime->idCounter++,
                     windowedMode(), mascotParent());
                 child->setEnv(shimeji->env());
                 child->show();
-                m_mascots.push_back(child);
-                m_mascotsById[child->mascotId()] = child;
+                m_runtime->mascots.push_back(child);
+                m_runtime->mascotsById[child->mascotId()] = child;
             }
             breedRequest.available = false;
         }
     }
 
-    for (auto &env : m_env) {
+    for (auto &env : m_runtime->env) {
         env->reset_scale();
     }
 
-    if (m_mascots.size() == 0 && !windowedMode()) {
+    if (m_runtime->mascots.size() == 0 && !windowedMode()) {
         setManagerVisible(true);
     }
 
@@ -316,7 +319,7 @@ void ShijimaManager::tick() {
 }
 
 ShijimaWidget *ShijimaManager::hitTest(QPoint const& screenPos) {
-    for (auto mascot : m_mascots) {
+    for (auto mascot : m_runtime->mascots) {
         QPoint localPos = { screenPos.x() - mascot->x(),
             screenPos.y() - mascot->y() };
         if (mascot->pointInside(localPos)) {
@@ -329,23 +332,23 @@ ShijimaWidget *ShijimaManager::hitTest(QPoint const& screenPos) {
 ShijimaWidget *ShijimaManager::spawn(std::string const& name) {
     QScreen *screen = mascotScreen();
     updateEnvironment(screen);
-    auto &env = m_env[screen];
-    auto product = m_factory.spawn(name, {});
+    auto &env = m_runtime->env[screen];
+    auto product = m_runtime->factory.spawn(name, {});
     product.manager->state->env = env;
     product.manager->reset_position();
     ShijimaWidget *shimeji = new ShijimaWidget(
-        m_loadedMascots[QString::fromStdString(name)],
-        std::move(product.manager), m_idCounter++,
+        m_runtime->loadedMascots[QString::fromStdString(name)],
+        std::move(product.manager), m_runtime->idCounter++,
         windowedMode(), mascotParent());
     shimeji->show();
-    m_mascots.push_back(shimeji);
-    m_mascotsById[shimeji->mascotId()] = shimeji;
+    m_runtime->mascots.push_back(shimeji);
+    m_runtime->mascotsById[shimeji->mascotId()] = shimeji;
     env->reset_scale();
     return shimeji;
 }
 
 void ShijimaManager::spawnClicked() {
-    auto &allTemplates = m_factory.get_all_templates();
+    auto &allTemplates = m_runtime->factory.get_all_templates();
     int target = QRandomGenerator::global()->bounded((int)allTemplates.size());
     int i = 0;
     for (auto &pair : allTemplates) {

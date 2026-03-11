@@ -26,6 +26,7 @@
 #include <QDoubleSpinBox>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QListWidget>
 #include <QPushButton>
 #include <QRadioButton>
 #include <QSlider>
@@ -45,8 +46,8 @@
 #endif
 
 void ShijimaManager::setupNavigation() {
-    m_homePage = new QWidget(this);
-    auto *homeLayout = new QVBoxLayout(m_homePage);
+    m_ui->homePage = new QWidget(this);
+    auto *homeLayout = new QVBoxLayout(m_ui->homePage);
     homeLayout->setContentsMargins(10, 10, 10, 10);
     homeLayout->setSpacing(8);
 
@@ -67,41 +68,41 @@ void ShijimaManager::setupNavigation() {
 
     auto *btnFolder = new ElaPushButton(tr("Show Folder"));
     connect(btnFolder, &ElaPushButton::clicked, [this]() {
-        QDesktopServices::openUrl(QUrl::fromLocalFile(m_mascotsPath));
+        QDesktopServices::openUrl(QUrl::fromLocalFile(m_runtime->mascotsPath));
     });
     actionRow->addWidget(btnFolder);
 
     actionRow->addStretch();
     homeLayout->addLayout(actionRow);
 
-    m_listWidget.setParent(m_homePage);
-    homeLayout->addWidget(&m_listWidget, 1);
+    m_ui->listWidget->setParent(m_ui->homePage);
+    homeLayout->addWidget(m_ui->listWidget, 1);
 
-    addPageNode(tr("Home"), m_homePage, ElaIconType::House);
+    addPageNode(tr("Home"), m_ui->homePage, ElaIconType::House);
 
-    m_settingsPage = new QWidget(this);
-    auto *settingsLayout = new QVBoxLayout(m_settingsPage);
+    m_ui->settingsPage = new QWidget(this);
+    auto *settingsLayout = new QVBoxLayout(m_ui->settingsPage);
     settingsLayout->setContentsMargins(10, 10, 10, 10);
     settingsLayout->setSpacing(12);
 
     {
         static const QString key = "multiplicationEnabled";
         bool initial = m_settings.value(key, QVariant::fromValue(true)).toBool();
-        for (auto &env : m_env) {
+        for (auto &env : m_runtime->env) {
             env->allows_breeding = initial;
         }
 
-        auto *area = new ElaScrollPageArea(m_settingsPage);
+        auto *area = new ElaScrollPageArea(m_ui->settingsPage);
         auto *row = new QHBoxLayout(area);
-        auto *label = new ElaText(tr("Multiplication"), m_settingsPage);
+        auto *label = new ElaText(tr("Multiplication"), m_ui->settingsPage);
         label->setWordWrap(false);
         label->setTextPixelSize(15);
         row->addWidget(label);
         row->addStretch();
-        auto *toggle = new ElaToggleSwitch(m_settingsPage);
+        auto *toggle = new ElaToggleSwitch(m_ui->settingsPage);
         toggle->setIsToggled(initial);
         connect(toggle, &ElaToggleSwitch::toggled, [this](bool checked) {
-            for (auto &env : m_env) {
+            for (auto &env : m_runtime->env) {
                 env->allows_breeding = checked;
             }
             m_settings.setValue("multiplicationEnabled", QVariant::fromValue(checked));
@@ -114,14 +115,14 @@ void ShijimaManager::setupNavigation() {
         static const QString key = "speechBubbleEnabled";
         bool initial = m_settings.value(key, QVariant::fromValue(true)).toBool();
 
-        auto *area = new ElaScrollPageArea(m_settingsPage);
+        auto *area = new ElaScrollPageArea(m_ui->settingsPage);
         auto *row = new QHBoxLayout(area);
-        auto *label = new ElaText(tr("Speech Bubble"), m_settingsPage);
+        auto *label = new ElaText(tr("Speech Bubble"), m_ui->settingsPage);
         label->setWordWrap(false);
         label->setTextPixelSize(15);
         row->addWidget(label);
         row->addStretch();
-        auto *toggle = new ElaToggleSwitch(m_settingsPage);
+        auto *toggle = new ElaToggleSwitch(m_ui->settingsPage);
         toggle->setIsToggled(initial);
         connect(toggle, &ElaToggleSwitch::toggled, [this](bool checked) {
             m_settings.setValue("speechBubbleEnabled", QVariant::fromValue(checked));
@@ -134,14 +135,14 @@ void ShijimaManager::setupNavigation() {
         static const QString key = "speechBubbleClickCount";
         int initial = m_settings.value(key, 1).toInt();
 
-        auto *area = new ElaScrollPageArea(m_settingsPage);
+        auto *area = new ElaScrollPageArea(m_ui->settingsPage);
         auto *row = new QHBoxLayout(area);
-        auto *label = new ElaText(tr("Speech Bubble Click Count"), m_settingsPage);
+        auto *label = new ElaText(tr("Speech Bubble Click Count"), m_ui->settingsPage);
         label->setWordWrap(false);
         label->setTextPixelSize(15);
         row->addWidget(label);
         row->addStretch();
-        auto *spinBox = new QSpinBox(m_settingsPage);
+        auto *spinBox = new QSpinBox(m_ui->settingsPage);
         spinBox->setRange(1, 10);
         spinBox->setValue(initial);
         connect(spinBox, QOverload<int>::of(&QSpinBox::valueChanged), [this](int val) {
@@ -152,26 +153,26 @@ void ShijimaManager::setupNavigation() {
     }
 
     {
-        auto *area = new ElaScrollPageArea(m_settingsPage);
+        auto *area = new ElaScrollPageArea(m_ui->settingsPage);
         auto *row = new QHBoxLayout(area);
-        auto *label = new ElaText(tr("Windowed Mode"), m_settingsPage);
+        auto *label = new ElaText(tr("Windowed Mode"), m_ui->settingsPage);
         label->setWordWrap(false);
         label->setTextPixelSize(15);
         row->addWidget(label);
         row->addStretch();
-        auto *toggle = new ElaToggleSwitch(m_settingsPage);
+        auto *toggle = new ElaToggleSwitch(m_ui->settingsPage);
         toggle->setIsToggled(windowedMode());
 
-        if (!m_windowedModeAction) {
-            m_windowedModeAction = new QAction(this);
+        if (!m_ui->windowedModeAction) {
+            m_ui->windowedModeAction = new QAction(this);
         }
-        m_windowedModeAction->setCheckable(true);
-        m_windowedModeAction->setChecked(windowedMode());
+        m_ui->windowedModeAction->setCheckable(true);
+        m_ui->windowedModeAction->setChecked(windowedMode());
 
         connect(toggle, &ElaToggleSwitch::toggled, [this](bool checked) {
             setWindowedMode(checked);
         });
-        connect(m_windowedModeAction, &QAction::toggled, toggle, &ElaToggleSwitch::setIsToggled);
+        connect(m_ui->windowedModeAction, &QAction::toggled, toggle, &ElaToggleSwitch::setIsToggled);
         row->addWidget(toggle);
         settingsLayout->addWidget(area);
     }
@@ -179,22 +180,22 @@ void ShijimaManager::setupNavigation() {
     {
         static const QString key = "windowedModeBackground";
         QColor initial = m_settings.value(key, "#FF0000").toString();
-        m_sandboxBackground = initial;
+        m_ui->sandboxBackground = initial;
         updateSandboxBackground();
 
-        auto *area = new ElaScrollPageArea(m_settingsPage);
+        auto *area = new ElaScrollPageArea(m_ui->settingsPage);
         auto *row = new QHBoxLayout(area);
-        auto *label = new ElaText(tr("Background Color"), m_settingsPage);
+        auto *label = new ElaText(tr("Background Color"), m_ui->settingsPage);
         label->setWordWrap(false);
         label->setTextPixelSize(15);
         row->addWidget(label);
         row->addStretch();
-        auto *btn = new ElaPushButton("...", m_settingsPage);
+        auto *btn = new ElaPushButton("...", m_ui->settingsPage);
         connect(btn, &ElaPushButton::clicked, [this]() {
             QColorDialog dialog { this };
-            dialog.setCurrentColor(m_sandboxBackground);
+            dialog.setCurrentColor(m_ui->sandboxBackground);
             if (dialog.exec() == 1) {
-                m_sandboxBackground = dialog.selectedColor();
+                m_ui->sandboxBackground = dialog.selectedColor();
                 m_settings.setValue("windowedModeBackground",
                     ShijimaManagerInternal::colorToString(dialog.selectedColor()));
                 updateSandboxBackground();
@@ -205,14 +206,14 @@ void ShijimaManager::setupNavigation() {
     }
 
     {
-        auto *area = new ElaScrollPageArea(m_settingsPage);
+        auto *area = new ElaScrollPageArea(m_ui->settingsPage);
         auto *row = new QHBoxLayout(area);
-        auto *label = new ElaText(tr("Scale"), m_settingsPage);
+        auto *label = new ElaText(tr("Scale"), m_ui->settingsPage);
         label->setWordWrap(false);
         label->setTextPixelSize(15);
         row->addWidget(label);
         row->addStretch();
-        auto *btn = new ElaPushButton("...", m_settingsPage);
+        auto *btn = new ElaPushButton("...", m_ui->settingsPage);
         connect(btn, &ElaPushButton::clicked, [this]() {
             static const QString key = "userScale";
             QDialog dialog { this };
@@ -222,23 +223,23 @@ void ShijimaManager::setupNavigation() {
 
             auto slider = new QSlider(Qt::Horizontal);
             slider->setRange(100, 10000);
-            slider->setValue(m_userScale * 1000);
+            slider->setValue(m_runtime->userScale * 1000);
 
             auto spin = new QDoubleSpinBox;
             spin->setRange(0.1, 10.0);
             spin->setDecimals(3);
             spin->setSingleStep(0.05);
-            spin->setValue(m_userScale);
+            spin->setValue(m_runtime->userScale);
 
             connect(slider, &QSlider::valueChanged, [this, spin](int v) {
-                m_userScale = v / 1000.0;
+                m_runtime->userScale = v / 1000.0;
                 spin->blockSignals(true);
-                spin->setValue(m_userScale);
+                spin->setValue(m_runtime->userScale);
                 spin->blockSignals(false);
             });
             connect(spin, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
                 [this, slider](double v) {
-                    m_userScale = v;
+                    m_runtime->userScale = v;
                     slider->blockSignals(true);
                     slider->setValue(v * 1000);
                     slider->blockSignals(false);
@@ -253,7 +254,7 @@ void ShijimaManager::setupNavigation() {
             mainLayout->addWidget(btnSave);
 
             if (dialog.exec() == QDialog::Accepted) {
-                m_settings.setValue(key, m_userScale);
+                m_settings.setValue(key, m_runtime->userScale);
             }
         });
         row->addWidget(btn);
@@ -261,14 +262,14 @@ void ShijimaManager::setupNavigation() {
     }
 
     {
-        auto *area = new ElaScrollPageArea(m_settingsPage);
+        auto *area = new ElaScrollPageArea(m_ui->settingsPage);
         auto *row = new QHBoxLayout(area);
-        auto *label = new ElaText(tr("Language"), m_settingsPage);
+        auto *label = new ElaText(tr("Language"), m_ui->settingsPage);
         label->setWordWrap(false);
         label->setTextPixelSize(15);
         row->addWidget(label);
         row->addStretch();
-        auto *btn = new ElaPushButton("...", m_settingsPage);
+        auto *btn = new ElaPushButton("...", m_ui->settingsPage);
         connect(btn, &ElaPushButton::clicked, [this]() {
             QDialog d(this);
             d.setWindowTitle(tr("Select Language"));
@@ -277,7 +278,7 @@ void ShijimaManager::setupNavigation() {
             auto btnEn = new QRadioButton("English");
             auto btnZh = new QRadioButton("中文(简体)");
 
-            if (m_currentLanguage == "zh_CN") {
+            if (m_ui->currentLanguage == "zh_CN") {
                 btnZh->setChecked(true);
             }
             else {
@@ -306,14 +307,14 @@ void ShijimaManager::setupNavigation() {
     }
 
     {
-        auto *area = new ElaScrollPageArea(m_settingsPage);
+        auto *area = new ElaScrollPageArea(m_ui->settingsPage);
         auto *row = new QHBoxLayout(area);
-        auto *label = new ElaText(tr("Detach Speed"), m_settingsPage);
+        auto *label = new ElaText(tr("Detach Speed"), m_ui->settingsPage);
         label->setWordWrap(false);
         label->setTextPixelSize(15);
         row->addWidget(label);
         row->addStretch();
-        auto *btn = new ElaPushButton("...", m_settingsPage);
+        auto *btn = new ElaPushButton("...", m_ui->settingsPage);
         connect(btn, &ElaPushButton::clicked, [this]() {
             static const QString key = "detachThreshold";
             QDialog dialog(this);
@@ -322,11 +323,11 @@ void ShijimaManager::setupNavigation() {
 
             auto slider = new QSlider(Qt::Horizontal);
             slider->setRange(0, 200);
-            slider->setValue(m_detachThreshold);
+            slider->setValue(m_runtime->detachThreshold);
 
             auto spin = new QSpinBox;
             spin->setRange(0, 200);
-            spin->setValue(m_detachThreshold);
+            spin->setValue(m_runtime->detachThreshold);
 
             connect(slider, &QSlider::valueChanged, spin, &QSpinBox::setValue);
             connect(spin, QOverload<int>::of(&QSpinBox::valueChanged), slider, &QSlider::setValue);
@@ -340,8 +341,8 @@ void ShijimaManager::setupNavigation() {
             l->addWidget(btnSave);
 
             if (dialog.exec() == QDialog::Accepted) {
-                m_detachThreshold = spin->value();
-                m_settings.setValue(key, m_detachThreshold);
+                m_runtime->detachThreshold = spin->value();
+                m_settings.setValue(key, m_runtime->detachThreshold);
             }
         });
         row->addWidget(btn);
@@ -349,12 +350,12 @@ void ShijimaManager::setupNavigation() {
     }
 
     settingsLayout->addStretch();
-    addFooterNode(tr("Settings"), m_settingsPage, m_settingsKey, 0, ElaIconType::GearComplex);
+    addFooterNode(tr("Settings"), m_ui->settingsPage, m_ui->settingsKey, 0, ElaIconType::GearComplex);
 
-    addFooterNode(tr("About"), m_aboutKey, 0, ElaIconType::User);
+    addFooterNode(tr("About"), m_ui->aboutKey, 0, ElaIconType::User);
     connect(this, &ElaWindow::navigationNodeClicked,
         [this](ElaNavigationType::NavigationNodeType nodeType, QString nodeKey) {
-            if (nodeKey != m_aboutKey) {
+            if (nodeKey != m_ui->aboutKey) {
                 return;
             }
             Q_UNUSED(nodeType);

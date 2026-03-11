@@ -17,6 +17,7 @@
 //
 
 #include "shijima-qt/ShijimaManager.hpp"
+#include "shijima-qt/MascotData.hpp"
 #include "../ShijimaManagerInternal.hpp"
 #include <array>
 #include <cstdint>
@@ -32,6 +33,7 @@
 #include <QMessageBox>
 #include <QProcess>
 #include <QTimer>
+#include <QTranslator>
 #include "ElaTheme.h"
 
 namespace ShijimaManagerInternal {
@@ -118,13 +120,13 @@ void ShijimaManager::quitAction() {
 }
 
 void ShijimaManager::deleteAction() {
-    if (m_loadedMascots.size() == 0) {
+    if (m_runtime->loadedMascots.size() == 0) {
         return;
     }
 
-    auto selected = m_listWidget.selectedItems();
+    auto selected = m_ui->listWidget->selectedItems();
     for (long i = (long)selected.size() - 1; i >= 0; --i) {
-        auto mascotData = m_loadedMascots[selected[i]->text()];
+        auto mascotData = m_runtime->loadedMascots[selected[i]->text()];
         if (!mascotData->deletable()) {
             selected.remove(i);
         }
@@ -150,7 +152,7 @@ void ShijimaManager::deleteAction() {
     int ret = msgBox.exec();
     if (ret == QMessageBox::StandardButton::Yes) {
         for (auto item : selected) {
-            auto mascotData = m_loadedMascots[item->text()];
+            auto mascotData = m_runtime->loadedMascots[item->text()];
             if (!mascotData->deletable()) {
                 continue;
             }
@@ -175,19 +177,19 @@ void ShijimaManager::deleteAction() {
 }
 
 void ShijimaManager::updateSandboxBackground() {
-    if (m_sandboxWidget != nullptr) {
-        m_sandboxWidget->setStyleSheet("#sandboxWindow { background-color: " +
-            ShijimaManagerInternal::colorToString(m_sandboxBackground) + "; }");
+    if (m_ui->sandboxWidget != nullptr) {
+        m_ui->sandboxWidget->setStyleSheet("#sandboxWindow { background-color: " +
+            ShijimaManagerInternal::colorToString(m_ui->sandboxBackground) + "; }");
     }
 }
 
 void ShijimaManager::updateStatusBar() {
-    if (m_statusLabel == nullptr) {
+    if (m_ui->statusLabel == nullptr) {
         return;
     }
-    int mascotCount = static_cast<int>(m_mascots.size());
-    int templateCount = m_loadedMascots.size();
-    m_statusLabel->setText(tr("  Mascots: %1  |  Templates: %2")
+    int mascotCount = static_cast<int>(m_runtime->mascots.size());
+    int templateCount = m_runtime->loadedMascots.size();
+    m_ui->statusLabel->setText(tr("  Mascots: %1  |  Templates: %2")
         .arg(mascotCount).arg(templateCount));
 }
 
@@ -227,7 +229,7 @@ void ShijimaManager::setManagerVisible(bool visible) {
     }
     else if (m_wasVisible && !visible) {
 #if defined(__APPLE__)
-        if (m_mascots.size() == 0) {
+        if (m_runtime->mascots.size() == 0) {
             askClose();
             return;
         }
@@ -242,31 +244,31 @@ void ShijimaManager::setManagerVisible(bool visible) {
 }
 
 void ShijimaManager::switchLanguage(const QString &langCode) {
-    if (langCode == m_currentLanguage) {
+    if (langCode == m_ui->currentLanguage) {
         return;
     }
 
-    if (m_translator != nullptr) {
-        qApp->removeTranslator(m_translator);
-        delete m_translator;
-        m_translator = nullptr;
+    if (m_ui->translator != nullptr) {
+        qApp->removeTranslator(m_ui->translator);
+        delete m_ui->translator;
+        m_ui->translator = nullptr;
     }
-    if (m_qtTranslator != nullptr) {
-        qApp->removeTranslator(m_qtTranslator);
-        delete m_qtTranslator;
-        m_qtTranslator = nullptr;
+    if (m_ui->qtTranslator != nullptr) {
+        qApp->removeTranslator(m_ui->qtTranslator);
+        delete m_ui->qtTranslator;
+        m_ui->qtTranslator = nullptr;
     }
 
-    m_currentLanguage = langCode;
+    m_ui->currentLanguage = langCode;
     m_settings.setValue("language", langCode);
     if (langCode != "en") {
-        m_translator = new QTranslator(this);
-        if (m_translator->load("shijima-qt_" + langCode, ":/i18n")) {
-            qApp->installTranslator(m_translator);
+        m_ui->translator = new QTranslator(this);
+        if (m_ui->translator->load("shijima-qt_" + langCode, ":/i18n")) {
+            qApp->installTranslator(m_ui->translator);
         }
-        m_qtTranslator = new QTranslator(this);
-        if (m_qtTranslator->load("qt_" + langCode, ":/i18n")) {
-            qApp->installTranslator(m_qtTranslator);
+        m_ui->qtTranslator = new QTranslator(this);
+        if (m_ui->qtTranslator->load("qt_" + langCode, ":/i18n")) {
+            qApp->installTranslator(m_ui->qtTranslator);
         }
     }
 

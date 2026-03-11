@@ -18,23 +18,26 @@
 
 #pragma once
 
-#include <functional>
+#include <QColor>
 #include <QString>
-#include "runtime/ShijimaManagerRuntimeState.hpp"
-#include "ui/ShijimaManagerUiState.hpp"
 
-class QColor;
+class QAction;
+class QLabel;
 class QListWidget;
-class ShijimaManager;
+class QTranslator;
+class QWidget;
 
-namespace ShijimaManagerInternal {
-
-constexpr int kSubtickCount = 4;
-
-QString colorToString(QColor const& color);
-void dispatchToMainThread(std::function<void()> callback);
-void applyMascotListTheme(QListWidget& listWidget);
-void refreshTrayMenu(ShijimaManager *manager);
-void setupTrayIcon(ShijimaManager *manager);
-
-}
+struct ShijimaManagerUiState {
+    QColor sandboxBackground;
+    QAction *windowedModeAction = nullptr;
+    QWidget *sandboxWidget = nullptr;
+    QListWidget *listWidget = nullptr;
+    QTranslator *translator = nullptr;
+    QTranslator *qtTranslator = nullptr;
+    QString currentLanguage = "en";
+    QLabel *statusLabel = nullptr;
+    QWidget *homePage = nullptr;
+    QWidget *settingsPage = nullptr;
+    QString settingsKey;
+    QString aboutKey;
+};

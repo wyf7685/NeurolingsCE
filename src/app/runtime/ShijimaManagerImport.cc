@@ -38,10 +38,10 @@
 std::set<std::string> ShijimaManager::import(QString const& path) noexcept {
     try {
 #if !SHIJIMA_WITH_SHIMEJIFINDER
-        return SimpleZipImporter::import(path, m_mascotsPath);
+        return SimpleZipImporter::import(path, m_runtime->mascotsPath);
 #else
         auto ar = shimejifinder::analyze(path.toStdString());
-        ar->extract(m_mascotsPath.toStdString());
+        ar->extract(m_runtime->mascotsPath.toStdString());
         return ar->shimejis();
 #endif
     }
@@ -101,12 +101,12 @@ void ShijimaManager::showEvent(QShowEvent *event) {
     }
 
     m_firstShow = false;
-    if (!m_importOnShowPath.isEmpty()) {
-        QString path = m_importOnShowPath;
-        m_importOnShowPath = {};
+    if (!m_runtime->importOnShowPath.isEmpty()) {
+        QString path = m_runtime->importOnShowPath;
+        m_runtime->importOnShowPath = {};
         importWithDialog({ path });
     }
-    else if (m_loadedMascots.size() == 1) {
+    else if (m_runtime->loadedMascots.size() == 1) {
         auto msgBox = new QMessageBox { this };
         msgBox->setText(tr("Welcome to NeurolingsCE! Get started by dragging and dropping a "
             "shimeji archive to the manager window. You can also import archives "
@@ -118,7 +118,7 @@ void ShijimaManager::showEvent(QShowEvent *event) {
 }
 
 void ShijimaManager::importOnShow(QString const& path) {
-    m_importOnShowPath = path;
+    m_runtime->importOnShowPath = path;
 }
 
 void ShijimaManager::dragEnterEvent(QDragEnterEvent *event) {
