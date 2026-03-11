@@ -112,7 +112,7 @@ NeurolingsCE/
 ├── src/app/              # Qt application layer (split into core/runtime/ui)
 ├── src/platform/Platform/ # Platform abstraction (Windows/Linux/macOS)
 ├── include/shijima-qt/   # Public headers
-├── libshijima/           # Vendored core mascot simulation engine source
+├── src/app/core/shijima-engine/ # Integrated core mascot simulation engine source
 ├── libshimejifinder/     # [submodule] Mascot pack import/extraction
 ├── cpp-httplib/          # [submodule] HTTP server (header-only)
 ├── translations/         # i18n translation files
@@ -136,7 +136,7 @@ This project is based on [Shijima-Qt](https://github.com/pixelomer/Shijima-Qt) b
 This project was originally created as a migration version for "[Neurolings](https://x.com/Monikaphobia/status/1844272129619132682?s=20)", but is now being transformed into a general-purpose Shimeji desktop pet core manager program.
 
 Core dependencies:
-- [libshijima](https://github.com/pixelomer/libshijima) — Mascot simulation engine
+- [libshijima](https://github.com/pixelomer/libshijima) — Mascot simulation engine, integrated into `src/app/core/shijima-engine`
 - [libshimejifinder](https://github.com/pixelomer/libshimejifinder) — Mascot pack parser
 - [cpp-httplib](https://github.com/yhirose/cpp-httplib) — HTTP library
 - [Qt 6](https://www.qt.io/) — GUI framework

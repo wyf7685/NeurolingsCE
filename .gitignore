@@ -181,7 +181,6 @@ vcpkg_installed/
 # -----------------------------------------------------------------------------
 # Submodule build artifacts (generated inside submodule dirs by Make)
 # -----------------------------------------------------------------------------
-libshijima/build/
 libshimejifinder/build/
 /nul
 /src/platform/Platform/AGENTS.md

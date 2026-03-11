@@ -112,7 +112,7 @@ NeurolingsCE/
 ├── src/app/              # Qt 应用层（core/runtime/ui 分层）
 ├── src/platform/Platform/ # 平台抽象层（Windows/Linux/macOS）
 ├── include/shijima-qt/   # 公共头文件
-├── libshijima/           # 内置核心看板娘模拟引擎源码
+├── src/app/core/shijima-engine/ # 内置核心看板娘模拟引擎源码
 ├── libshimejifinder/     # [子模块] 看板娘资源包导入/解压
 ├── cpp-httplib/          # [子模块] HTTP 服务器（header-only）
 ├── translations/         # i18n 翻译文件
@@ -136,7 +136,7 @@ NeurolingsCE/
 本项目最早是为 "[Neurolings](https://x.com/Monikaphobia/status/1844272129619132682?s=20)" 而做的迁移版本，现在转为通用Shimeji桌宠核心/管理器程序
 
 核心依赖：
-- [libshijima](https://github.com/pixelomer/libshijima) — 看板娘模拟引擎
+- [libshijima](https://github.com/pixelomer/libshijima) — 已整合进 `src/app/core/shijima-engine` 的看板娘模拟引擎
 - [libshimejifinder](https://github.com/pixelomer/libshimejifinder) — 资源包解析
 - [cpp-httplib](https://github.com/yhirose/cpp-httplib) — HTTP 库
 - [Qt 6](https://www.qt.io/) — GUI 框架

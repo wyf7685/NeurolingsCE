@@ -38,6 +38,9 @@ SOURCES = src/app/main.cc \
 	qrc_resources.cc \
 	qrc_i18n.cc
 
+SHIJIMA_ENGINE_SOURCES := $(shell find src/app/core/shijima-engine/shijima -name '*.cc' | sort)
+SOURCES += $(SHIJIMA_ENGINE_SOURCES)
+
 DEFAULT_MASCOT_FILES := $(addsuffix .png,$(addprefix src/assets/DefaultMascot/img/shime,$(shell seq -s ' ' 1 1 46))) \
 	src/assets/DefaultMascot/behaviors.xml src/assets/DefaultMascot/actions.xml
 
@@ -78,7 +81,7 @@ else
 CXXFLAGS += -DSHIJIMA_USE_QTMULTIMEDIA=0
 endif
 
-CXXFLAGS += -Iinclude -Isrc/platform -Ilibshijima -Ilibshimejifinder -Icpp-httplib -IElaWidgetTools/ElaWidgetTools -I. -DNEUROLINGSCE_VERSION='"$(NEUROLINGSCE_VERSION)"'
+CXXFLAGS += -Iinclude -Isrc/platform -Isrc/app/core/shijima-engine -Ilibshimejifinder -Icpp-httplib -IElaWidgetTools/ElaWidgetTools -I. -DNEUROLINGSCE_VERSION='"$(NEUROLINGSCE_VERSION)"' -DSHIJIMA_DUK_STATIC_BUILD=1
 PKG_LIBS += libarchive
 PUBLISH_DLL = $(addprefix Qt6,$(QT_LIBS))
 
@@ -161,16 +164,13 @@ appimage: publish/Linux/$(CONFIG)/NeurolingsCE.AppImage
 macapp: publish/macOS/$(CONFIG)/NeurolingsCE.app
 
 $(APP_EXECUTABLE)$(EXE): src/platform/Platform/Platform.a libshimejifinder/build/libshimejifinder.a \
-	libshijima/build/libshijima.a ElaWidgetTools/build/ElaWidgetTools/libElaWidgetTools.a $(APP_EXECUTABLE).a \
+	ElaWidgetTools/build/ElaWidgetTools/libElaWidgetTools.a $(APP_EXECUTABLE).a \
 	src/packaging/io.github.qingchenyouforcc.NeurolingsCE.metainfo.xml \
 	src/resources/resources.rc \
 	src/platform/Platform/Linux/gnome_script/metadata.json
 	$(CXX) -o $@ $(LD_COPY_NEEDED) $(LD_WHOLE_ARCHIVE) $^ $(LD_NO_WHOLE_ARCHIVE) \
 		$(TARGET_LDFLAGS) $(LDFLAGS)
 	if [ $(CONFIG) = "release" ]; then $(STRIP) $@; fi
-
-libshijima/build/libshijima.a: libshijima/build/Makefile
-	$(MAKE) -C libshijima/build
 
 DefaultMascot.cc: $(DEFAULT_MASCOT_FILES) Makefile src/tools/bundle-default.sh
 	./src/tools/bundle-default.sh $(DEFAULT_MASCOT_FILES) > '$@-'
@@ -230,9 +230,6 @@ translations/%.qm: translations/%.ts
 
 qrc_i18n.cc: translations/i18n.qrc $(QM_FILES)
 	$(RCC) --name i18n -o $@ $<
-libshijima/build/Makefile: libshijima/CMakeLists.txt FORCE
-	mkdir -p libshijima/build && cd libshijima/build && $(CMAKE) $(CMAKEFLAGS) -DSHIJIMA_BUILD_EXAMPLES=NO ..
-
 libshimejifinder/build/Makefile: libshimejifinder/CMakeLists.txt FORCE
 	mkdir -p libshimejifinder/build && cd libshimejifinder/build && $(CMAKE) $(CMAKEFLAGS) \
 		-DSHIMEJIFINDER_BUILD_LIBARCHIVE=NO ..
@@ -254,7 +251,7 @@ ElaWidgetTools/build/ElaWidgetTools/libElaWidgetTools.a: ElaWidgetTools/build/Ma
 	$(MAKE) -C ElaWidgetTools/build
 
 clean::
-	rm -rf publish/$(PLATFORM)/$(CONFIG) libshijima/build libshimejifinder/build ElaWidgetTools/build
+	rm -rf publish/$(PLATFORM)/$(CONFIG) libshimejifinder/build ElaWidgetTools/build
 	rm -f $(OBJECTS) $(APP_EXECUTABLE).a $(APP_EXECUTABLE)$(EXE) $(APP_NAME).AppImage qrc_resources.cc qrc_i18n.cc $(QM_FILES)
 	find src/app -name '*.moc' -delete
 	$(MAKE) -C src/platform/Platform clean

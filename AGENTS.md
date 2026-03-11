@@ -15,7 +15,7 @@ NeurolingsCE/
 ├── src/app/              # Qt application layer (core/runtime/ui slices)
 ├── src/platform/Platform/ # OS abstraction: Windows/Linux/macOS
 ├── include/shijima-qt/   # Public headers + nested UI forwarding headers
-├── libshijima/           # Vendored core mascot simulation engine
+├── src/app/core/shijima-engine/ # Integrated mascot simulation engine (former libshijima)
 ├── libshimejifinder/     # [submodule] Archive import/extract for mascot packs
 ├── cpp-httplib/          # [submodule] HTTP server (header-only)
 ├── cmake/                # CMake helper scripts (BundleDefaultMascot, GenerateLicenses)
@@ -53,7 +53,7 @@ NeurolingsCE/
 ## CONVENTIONS
 
 - **Header/source split**: Public headers live in `include/shijima-qt/`; app implementations live under `src/app/core`, `src/app/runtime`, and `src/app/ui`. Extension is `.cc` (not `.cpp`).
-- **Include style**: `#include "shijima-qt/Foo.hpp"` for project headers, `#include <shijima/...>` for libshijima, `#include "Platform/..."` for platform layer.
+- **Include style**: `#include "shijima-qt/Foo.hpp"` for project headers, `#include <shijima/...>` for the integrated engine under `src/app/core/shijima-engine`, `#include "Platform/..."` for platform layer.
 - **Implementation file naming**: Use `Subject + Responsibility` for split implementation files, e.g. `ManagerImportWorkflow.cc`, `ManagerWindowSetup.cc`, `MascotWidgetRendering.cc`.
 - **C++ standard**: C++17 (`-std=c++17`).
 - **Header guard**: `#pragma once` everywhere.
@@ -69,7 +69,7 @@ NeurolingsCE/
 - **32-bit MSVC**: Explicitly fatal-errored. Must use x64 toolchain.
 - **`SHIJIMA_WITH_DEFAULT_MASCOT=OFF`**: Not supported — `DefaultMascot.cc` is required.
 - **`SHIJIMA_WITH_LICENSES_TEXT=OFF`**: Not supported — `licenses_generated.hpp` is required.
-- **libshijima upstream**: Does NOT accept contributions directly (stated in their README). In this repo it is vendored, so local fixes live here.
+- **libshijima upstream**: Does NOT accept contributions directly (stated in their README). In this repo it is integrated under `src/app/core/shijima-engine`, so local fixes live here.
 
 ## DUAL BUILD SYSTEMS
 
@@ -85,7 +85,7 @@ NeurolingsCE/
 
 | Module | Purpose | Notes |
 |--------|---------|-------|
-| `libshijima` | Mascot simulation core (XML parsing, behaviors, scripting via duktape) | Vendored in-tree, `shijima/` namespace |
+| `src/app/core/shijima-engine` | Mascot simulation core (XML parsing, behaviors, scripting via duktape) | In-tree engine sources, `shijima/` namespace |
 | `libshimejifinder` | Archive extraction for `.zip` mascot packs | Uses libunarr + optional libarchive |
 | `cpp-httplib` | Header-only HTTP client/server | Used for single-instance check + REST API |
 
@@ -118,7 +118,7 @@ make install PREFIX=/usr/local
 ## NOTES
 
 - **Single-instance**: App pings `http://127.0.0.1:32456/shijima/api/v1/ping` on startup. If reachable → refuses to start.
-- **Tick rate**: Shimeji run at 25 FPS (hardcoded in libshijima design).
+- **Tick rate**: Shimeji run at 25 FPS (hardcoded in the integrated shijima engine design).
 - **Thread safety**: `ShijimaManager` uses `std::mutex` + `std::condition_variable` for tick callbacks from HTTP API thread.
 - **Window tracking**: Each platform has its own `ActiveWindowObserver` implementation. Linux supports KDE (KWin script) and GNOME (shell extension).
 - **Qt version**: 6.8.x. CI uses 6.8.2 (Linux), MacPorts Qt6 (macOS), Docker Fedora (Windows cross).

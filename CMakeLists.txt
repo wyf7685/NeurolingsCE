@@ -29,10 +29,6 @@ endif()
 
 option(SHIJIMA_USE_QTMULTIMEDIA "Enable Qt Multimedia support" ON)
 
-# libshijima ships an SDL2-based sandbox example. This repo primarily builds the Qt app,
-# so keep the SDL2 example off by default to avoid requiring SDL2 at configure time.
-option(SHIJIMA_BUILD_EXAMPLES "Build libshijima SDL2 sandbox example" OFF)
-
 find_package(Qt6 QUIET COMPONENTS Core Gui Widgets Concurrent LinguistTools)
 if(NOT Qt6_FOUND)
   message(FATAL_ERROR
@@ -103,13 +99,23 @@ if(UNIX AND NOT APPLE)
   _shijima_print_qt_target_locations(Qt6::DBus)
 endif()
 
-# Dependencies
-add_subdirectory(libshijima)
+# Integrated shijima engine sources live under src/app/core/shijima-engine.
+file(GLOB_RECURSE NEUROLINGS_SHIJIMA_ENGINE_SOURCES CONFIGURE_DEPENDS
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/app/core/shijima-engine/shijima/*.cc"
+)
 
-if(MSVC AND TARGET shijima)
-  set_property(TARGET shijima PROPERTY MSVC_RUNTIME_LIBRARY "${_shijima_msvc_runtime}")
-  # Handle UTF-8 source files in libshijima (contains Unicode characters)
-  target_compile_options(shijima PRIVATE /utf-8)
+add_library(NeurolingsShijimaEngine STATIC
+  ${NEUROLINGS_SHIJIMA_ENGINE_SOURCES}
+)
+target_include_directories(NeurolingsShijimaEngine PUBLIC
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/app/core/shijima-engine
+)
+target_compile_definitions(NeurolingsShijimaEngine PUBLIC SHIJIMA_DUK_STATIC_BUILD=1)
+
+if(MSVC)
+  set_property(TARGET NeurolingsShijimaEngine PROPERTY MSVC_RUNTIME_LIBRARY "${_shijima_msvc_runtime}")
+  # Handle UTF-8 source files in the integrated shijima engine.
+  target_compile_options(NeurolingsShijimaEngine PRIVATE /utf-8)
 endif()
 
 # ElaWidgetTools (Fluent Design UI components)
@@ -301,7 +307,6 @@ target_include_directories(NeurolingsCE PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_CURRENT_SOURCE_DIR}/include
   ${CMAKE_CURRENT_SOURCE_DIR}/src/platform
-  ${CMAKE_CURRENT_SOURCE_DIR}/libshijima
   ${CMAKE_CURRENT_SOURCE_DIR}/libshimejifinder
   ${CMAKE_CURRENT_SOURCE_DIR}/cpp-httplib
 )
@@ -318,7 +323,7 @@ target_link_libraries(NeurolingsCE PRIVATE
   Qt6::Gui
   Qt6::Widgets
   Qt6::Concurrent
-  shijima
+  NeurolingsShijimaEngine
   ElaWidgetTools
 )
 
