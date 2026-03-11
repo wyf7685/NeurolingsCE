@@ -164,29 +164,45 @@ endif()
 
 target_sources(NeurolingsCE PRIVATE
   src/app/main.cc
-  src/app/Asset.cc
-  src/app/MascotData.cc
-  src/app/AssetLoader.cc
-  src/app/ForcedProgressDialog.cc
-  src/app/ShijimaContextMenu.cc
-  src/app/ShijimaManager.cc
-  src/app/ShijimaWidget.cc
-  src/app/SoundEffectManager.cc
-  src/app/ShijimaLicensesDialog.cc
-  src/app/ShimejiInspectorDialog.cc
-  src/app/ShijimaHttpApi.cc
+  src/app/core/assets/Asset.cc
+  src/app/core/assets/MascotData.cc
+  src/app/core/assets/AssetLoader.cc
+  src/app/ui/menus/ShijimaContextMenu.cc
+  src/app/ui/menus/ContextMenuActions.cc
+  src/app/core/audio/SoundEffectManager.cc
+  src/app/core/http/ShijimaHttpApi.cc
+  src/app/core/import/SimpleZipImporter.cc
+  src/app/runtime/ManagerEnvironmentSync.cc
+  src/app/runtime/ManagerImportWorkflow.cc
+  src/app/runtime/ManagerLifecycle.cc
+  src/app/runtime/ManagerMascotRuntime.cc
+  src/app/ui/mascot/MascotWidgetInteraction.cc
+  src/app/ui/mascot/MascotWidgetLifecycle.cc
+  src/app/ui/mascot/MascotWidgetRendering.cc
+  src/app/ui/ManagerWindowSetup.cc
+  src/app/ui/ManagerUiActions.cc
+  src/app/ui/dialogs/common/ForcedProgressDialog.cc
+  src/app/ui/dialogs/inspector/ShimejiInspectorDialog.cc
+  src/app/ui/dialogs/inspector/ShimejiInspectorRows.cc
+  src/app/ui/dialogs/licenses/ShijimaLicensesDialog.cc
+  src/app/ui/ManagerTrayIcon.cc
+  src/app/ui/interface/ManagerAboutSection.cc
+  src/app/ui/interface/ManagerHomePage.cc
+  src/app/ui/interface/ManagerNavigation.cc
+  src/app/ui/interface/ManagerSettingsPage.cc
   src/app/cli.cc
-  src/app/SimpleZipImporter.cc
-  src/app/SpeechBubbleWidget.cc
+  src/app/ui/widgets/SpeechBubbleWidget.cc
+  src/app/ui/widgets/SpeechBubbleTextCatalog.cc
   src/resources/resources.qrc
 
   # Headers with Q_OBJECT (needed for AUTOMOC)
   include/shijima-qt/ShijimaManager.hpp
-  include/shijima-qt/ShijimaContextMenu.hpp
-  include/shijima-qt/ShijimaLicensesDialog.hpp
-  include/shijima-qt/ShimejiInspectorDialog.hpp
+  include/shijima-qt/ui/mascot/ShijimaWidget.hpp
+  include/shijima-qt/ui/menus/ShijimaContextMenu.hpp
+  include/shijima-qt/ui/dialogs/licenses/ShijimaLicensesDialog.hpp
+  include/shijima-qt/ui/dialogs/inspector/ShimejiInspectorDialog.hpp
 
-  include/shijima-qt/SpeechBubbleWidget.hpp
+  include/shijima-qt/ui/widgets/SpeechBubbleWidget.hpp
   src/platform/Platform/Platform.hpp
   src/platform/Platform/ActiveWindow.hpp
   src/platform/Platform/ActiveWindowObserver.hpp

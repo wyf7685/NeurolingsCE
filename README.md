@@ -109,7 +109,7 @@ CONFIG=release make -j$(nproc)
 
 ```
 NeurolingsCE/
-├── src/app/              # Qt 应用层
+├── src/app/              # Qt 应用层（core/runtime/ui 分层）
 ├── src/platform/Platform/ # 平台抽象层（Windows/Linux/macOS）
 ├── include/shijima-qt/   # 公共头文件
 ├── libshijima/           # [子模块] 核心看板娘模拟引擎
@@ -120,6 +120,14 @@ NeurolingsCE/
 ├── src/assets/           # 内置默认看板娘资源
 └── src/packaging/        # 桌面入口、图标、AppStream 元信息
 ```
+
+`src/app` 目前按职责拆分为三层：
+
+- `src/app/core/`：资源加载、音效、HTTP API、压缩包导入等基础能力
+- `src/app/runtime/`：`ShijimaManager` 的环境同步、导入流程、生命周期与运行时调度
+- `src/app/ui/`：管理器窗口、托盘、页面构建、桌宠窗口交互、对话框与部件
+
+实现切片统一使用“主体 + 职责”的文件命名，例如 `ManagerImportWorkflow.cc`、`ManagerWindowSetup.cc`、`MascotWidgetRendering.cc`，方便按文件名直接定位业务边界。
 
 ## 致谢
 

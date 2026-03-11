@@ -206,15 +206,22 @@ FORCE: ;
 .PHONY: all clean FORCE
 
 # Qt MOC (Meta-Object Compiler) rules
-# Generate .moc files in src/app from headers in include/shijima-qt/
-# Source files include these with #include "ClassName.moc"
-src/app/%.moc: include/shijima-qt/%.hpp
+# Generate .moc files next to the sources that include them.
+src/app/ui/menus/ShijimaContextMenu.moc: include/shijima-qt/ui/menus/ShijimaContextMenu.hpp
 	$(MOC) -Iinclude $(QT_CFLAGS) $< -o $@
 
-# Ensure moc files are generated before compiling objects that need them
-src/app/ShijimaManager.o: src/app/ShijimaManager.moc
-src/app/ShijimaContextMenu.o: src/app/ShijimaContextMenu.moc
-src/app/ShijimaLicensesDialog.o: src/app/ShijimaLicensesDialog.moc
-src/app/ShimejiInspectorDialog.o: src/app/ShimejiInspectorDialog.moc
-src/app/SpeechBubbleWidget.o: src/app/SpeechBubbleWidget.moc
+src/app/ui/dialogs/licenses/ShijimaLicensesDialog.moc: include/shijima-qt/ui/dialogs/licenses/ShijimaLicensesDialog.hpp
+	$(MOC) -Iinclude $(QT_CFLAGS) $< -o $@
+
+src/app/ui/dialogs/inspector/ShimejiInspectorDialog.moc: include/shijima-qt/ui/dialogs/inspector/ShimejiInspectorDialog.hpp
+	$(MOC) -Iinclude $(QT_CFLAGS) $< -o $@
+
+src/app/ui/widgets/SpeechBubbleWidget.moc: include/shijima-qt/ui/widgets/SpeechBubbleWidget.hpp
+	$(MOC) -Iinclude $(QT_CFLAGS) $< -o $@
+
+# Ensure moc files are generated before compiling objects that include them
+src/app/ui/menus/ShijimaContextMenu.o: src/app/ui/menus/ShijimaContextMenu.moc
+src/app/ui/dialogs/licenses/ShijimaLicensesDialog.o: src/app/ui/dialogs/licenses/ShijimaLicensesDialog.moc
+src/app/ui/dialogs/inspector/ShimejiInspectorDialog.o: src/app/ui/dialogs/inspector/ShimejiInspectorDialog.moc
+src/app/ui/widgets/SpeechBubbleWidget.o: src/app/ui/widgets/SpeechBubbleWidget.moc
 -include *.d

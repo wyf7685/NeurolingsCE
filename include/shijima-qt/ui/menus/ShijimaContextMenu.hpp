@@ -1,7 +1,7 @@
 #pragma once
 
 // 
-// NeurolingsCE - Cross-platform shimeji simulation app for desktop
+// Shijima-Qt - Cross-platform shimeji simulation app for desktop
 // Copyright (C) 2025 pixelomer
 // 
 // This program is free software: you can redistribute it and/or modify
@@ -18,4 +18,27 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // 
 
-#include "shijima-qt/ui/widgets/SpeechBubbleWidget.hpp"
+#include <QMenu>
+
+#include "shijima-qt/ui/mascot/ShijimaWidget.hpp"
+
+class QAction;
+class QCloseEvent;
+
+class ShijimaContextMenu : public QMenu {
+    Q_OBJECT
+public:
+    ShijimaWidget *shijimaParent() {
+        return static_cast<ShijimaWidget *>(parent());
+    }
+    explicit ShijimaContextMenu(ShijimaWidget *parent);
+protected:
+    void closeEvent(QCloseEvent *) override;
+private:
+    void populateMenu();
+    void addBehaviorActions();
+    void addControlActions();
+    void addManagementActions();
+    void addDismissActions();
+    QAction *addLabeledAction(QString const& label);
+};

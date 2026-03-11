@@ -1,7 +1,7 @@
 #pragma once
 
 // 
-// NeurolingsCE - Cross-platform shimeji simulation app for desktop
+// Shijima-Qt - Cross-platform shimeji simulation app for desktop
 // Copyright (C) 2025 pixelomer
 // 
 // This program is free software: you can redistribute it and/or modify
@@ -18,4 +18,13 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // 
 
-#include "shijima-qt/ui/widgets/SpeechBubbleWidget.hpp"
+#include <QDialog>
+#include <QPlainTextEdit>
+
+class ShijimaLicensesDialog : public QDialog {
+    Q_OBJECT
+public:
+    ShijimaLicensesDialog(QWidget *parent);
+private:
+    QPlainTextEdit m_textEdit;
+};

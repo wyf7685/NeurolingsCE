@@ -18,19 +18,4 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // 
 
-#include <QMenu>
-#include "ShijimaWidget.hpp"
-
-class QCloseEvent;
-class QActionEvent;
-
-class ShijimaContextMenu : public QMenu {
-    Q_OBJECT
-public:
-    ShijimaWidget *shijimaParent() {
-        return static_cast<ShijimaWidget *>(parent());
-    }
-    explicit ShijimaContextMenu(ShijimaWidget *parent);
-protected:
-    void closeEvent(QCloseEvent *) override;
-};
+#include "shijima-qt/ui/menus/ShijimaContextMenu.hpp"

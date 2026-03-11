@@ -39,6 +39,9 @@ shijima-qt
 shijima-qt.exe
 shijima-qt.a
 *.AppImage
+!include/shijima-qt/
+!include/shijima-qt/ui/
+!include/shijima-qt/ui/**
 
 # -----------------------------------------------------------------------------
 # C/C++ object files & dependencies

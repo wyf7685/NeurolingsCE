@@ -1,0 +1,53 @@
+#pragma once
+
+// 
+// NeurolingsCE - Cross-platform shimeji simulation app for desktop
+// Copyright (C) 2025 pixelomer
+// 
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+// 
+
+#include <QMap>
+#include <QString>
+#include <QStringList>
+#include <QTimer>
+#include <QWidget>
+
+class SpeechBubbleWidget : public QWidget
+{
+    Q_OBJECT
+public:
+    explicit SpeechBubbleWidget(QWidget *parent = nullptr);
+    void showBubble(const QString &text, const QPoint &anchorScreenPos);
+    void hideBubble();
+    void updatePosition(const QPoint &anchorScreenPos);
+    bool isActive() const { return m_active; }
+
+    static QStringList loadBubbleTexts(const QString &mascotPath = QString());
+    static QString randomBubbleText(const QString &mascotPath = QString());
+
+protected:
+    void paintEvent(QPaintEvent *event) override;
+
+private:
+    QString m_text;
+    QTimer m_hideTimer;
+    QPoint m_anchorScreenPos;
+    bool m_active = false;
+    int m_tailHeight = 12;
+    int m_cornerRadius = 10;
+    int m_padding = 12;
+
+    static QMap<QString, QStringList> s_bubbleTextsCache;
+};

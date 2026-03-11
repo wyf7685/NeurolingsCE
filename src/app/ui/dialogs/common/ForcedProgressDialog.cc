@@ -1,7 +1,5 @@
-#pragma once
-
 // 
-// NeurolingsCE - Cross-platform shimeji simulation app for desktop
+// Shijima-Qt - Cross-platform shimeji simulation app for desktop
 // Copyright (C) 2025 pixelomer
 // 
 // This program is free software: you can redistribute it and/or modify
@@ -18,4 +16,16 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // 
 
-#include "shijima-qt/ui/widgets/SpeechBubbleWidget.hpp"
+#include "shijima-qt/ui/dialogs/common/ForcedProgressDialog.hpp"
+#include <QCloseEvent>
+
+void ForcedProgressDialog::closeEvent(QCloseEvent *event) {
+    if (!m_allowsClose) {
+        event->ignore();
+    }
+}
+
+bool ForcedProgressDialog::close() {
+    m_allowsClose = true;
+    return QWidget::close();
+}

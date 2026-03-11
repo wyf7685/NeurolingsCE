@@ -21,31 +21,38 @@
 #include <QString>
 #include <shijima/mascot/manager.hpp>
 #include <shijima/mascot/factory.hpp>
-#include <vector>
+#include <QList>
 #include <QMap>
-#include <QListWidgetItem>
-#include <QListWidget>
+#include <QSet>
 #include <QSettings>
-#include <QScreen>
 #include "shijima-qt/PlatformWidget.hpp"
-#include "shijima-qt/MascotData.hpp"
+#include <map>
+#include <memory>
 #include <set>
 #include <list>
-#include <mutex>
-#include <atomic>
-#include "Platform/ActiveWindowObserver.hpp"
-#include "shijima-qt/ShijimaWidget.hpp"
-#include "shijima-qt/ShijimaHttpApi.hpp"
-#include <condition_variable>
-#include <QTranslator>
-#include <QStatusBar>
 #include <functional>
-#include <QPushButton>
+#include <mutex>
+#include "shijima-qt/ShijimaHttpApi.hpp"
 #include "ElaWindow.h"
 
-class QVBoxLayout;
-class QWidget;
+class MascotData;
+class QAction;
+class QCloseEvent;
+class QDragEnterEvent;
+class QDropEvent;
+class QEvent;
 class QLabel;
+class QListWidgetItem;
+class QObject;
+class QPoint;
+class QScreen;
+class QShowEvent;
+class QTimerEvent;
+class QTranslator;
+class QWidget;
+class ShijimaWidget;
+struct ShijimaManagerRuntimeState;
+struct ShijimaManagerUiState;
 
 class ShijimaManager : public PlatformWidget<ElaWindow>
 {
@@ -81,7 +88,6 @@ protected:
     void changeEvent(QEvent *event) override;
 private:
     explicit ShijimaManager(QWidget *parent = nullptr);
-    static std::string imgRootForTemplatePath(std::string const& path);
     std::unique_lock<std::mutex> acquireLock();
     void abortPendingCallbacks();
     void loadDefaultMascot();
@@ -94,6 +100,9 @@ private:
     void loadAllMascots();
     void refreshListWidget();
     void setupNavigation();
+    void setupHomePage();
+    void setupSettingsPage();
+    void setupAboutPage();
     void importAction();
     void deleteAction();
     void updateSandboxBackground();
@@ -109,45 +118,12 @@ private:
     void switchLanguage(const QString &langCode);
     void updateStatusBar();
     QScreen *mascotScreen();
-    QColor m_sandboxBackground;
-    QAction *m_windowedModeAction;
-    QWidget *m_sandboxWidget;
+    std::unique_ptr<ShijimaManagerRuntimeState> m_runtime;
+    std::unique_ptr<ShijimaManagerUiState> m_ui;
     QSettings m_settings;
-    Platform::ActiveWindow m_previousWindow;
-    Platform::ActiveWindow m_currentWindow;
-    Platform::ActiveWindowObserver m_windowObserver;
-    int m_mascotTimer = -1;
     bool m_allowClose = false;
     bool m_firstShow = true;
     bool m_wasVisible = false;
     bool m_constructing = true;
-    int m_idCounter;
-    double m_userScale = 1.0;
-    int m_windowObserverTimer = -1;
-    QMap<QString, MascotData *> m_loadedMascots;
-    QMap<int, MascotData *> m_loadedMascotsById;
-    QSet<QString> m_listItemsToRefresh;
-    QMap<QScreen *, std::shared_ptr<shijima::mascot::environment>> m_env;
-    QMap<shijima::mascot::environment *, QScreen *> m_reverseEnv;
-    shijima::mascot::factory m_factory;
-    QString m_importOnShowPath;
-    std::list<ShijimaWidget *> m_mascots;
-    std::map<int, ShijimaWidget *> m_mascotsById;
-    QString m_mascotsPath;
-    QListWidget m_listWidget;
     ShijimaHttpApi m_httpApi;
-    bool m_hasTickCallbacks;
-    std::atomic<bool> m_shuttingDown{false};
-    std::mutex m_mutex;
-    std::condition_variable m_tickCallbackCompletion;
-    std::list<std::function<void(ShijimaManager *)>> m_tickCallbacks;
-    QTranslator *m_translator;
-    QTranslator *m_qtTranslator;
-    QString m_currentLanguage;
-    QLabel *m_statusLabel = nullptr;
-    QWidget *m_homePage = nullptr;
-    QWidget *m_settingsPage = nullptr;
-    QString m_settingsKey;
-    QString m_aboutKey;
-    double m_detachThreshold = 30.0;  // pixels per tick speed threshold for detachment
 };

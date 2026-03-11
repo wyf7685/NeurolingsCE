@@ -16,7 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // 
 
-#include "shijima-qt/ShijimaLicensesDialog.hpp"
+#include "shijima-qt/ui/dialogs/licenses/ShijimaLicensesDialog.hpp"
 #include <QVBoxLayout>
 #include <QWidget>
 #include "licenses_generated.hpp"

@@ -1,3 +1,5 @@
+#pragma once
+
 // 
 // Shijima-Qt - Cross-platform shimeji simulation app for desktop
 // Copyright (C) 2025 pixelomer
@@ -16,16 +18,31 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // 
 
-#include "shijima-qt/ForcedProgressDialog.hpp"
-#include <QCloseEvent>
+#include <QDialog>
+#include <QString>
+#include <functional>
+#include <string>
+#include <vector>
 
-void ForcedProgressDialog::closeEvent(QCloseEvent *event) {
-    if (!m_allowsClose) {
-        event->ignore();
+class ShijimaWidget;
+class QFormLayout;
+
+namespace shijima {
+    namespace mascot {
+        class manager;
     }
 }
 
-bool ForcedProgressDialog::close() {
-    m_allowsClose = true;
-    return QWidget::close();
-}
+class ShimejiInspectorDialog : public QDialog {
+    Q_OBJECT
+private:
+    std::vector<std::function<void()>> m_tickCallbacks;
+    QFormLayout *m_formLayout;
+    void registerRows();
+    void addRow(QString const& label,
+        std::function<std::string(shijima::mascot::manager &)> tick);
+public:
+    ShijimaWidget *shijimaParent();
+    ShimejiInspectorDialog(ShijimaWidget *parent);
+    void tick();
+};
