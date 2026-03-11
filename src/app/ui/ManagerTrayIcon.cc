@@ -140,8 +140,28 @@ void setupTrayIcon(ShijimaManager *manager) {
                 refreshTrayMenu(manager);
             }
         });
+    QObject::connect(manager, &QObject::destroyed, []() {
+        g_trayIcon = nullptr;
+        g_trayMenu = nullptr;
+    });
 
     g_trayIcon->show();
+}
+
+void teardownTrayIcon() {
+    if (g_trayIcon == nullptr) {
+        return;
+    }
+
+    if (g_trayMenu != nullptr) {
+        g_trayMenu->close();
+        g_trayMenu->clear();
+        g_trayIcon->setContextMenu(nullptr);
+        g_trayMenu = nullptr;
+    }
+
+    g_trayIcon->hide();
+    g_trayIcon = nullptr;
 }
 
 }

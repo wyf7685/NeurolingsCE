@@ -19,6 +19,8 @@
 #include "shijima-qt/ShijimaManager.hpp"
 
 #include "ManagerRuntimeHelpers.hpp"
+#include "../ui/ManagerUiHelpers.hpp"
+#include "shijima-qt/ui/mascot/ShijimaWidget.hpp"
 
 #include <QCloseEvent>
 #include <QGuiApplication>
@@ -97,7 +99,7 @@ void ShijimaManager::closeEvent(QCloseEvent *event) {
     }
 
     abortPendingCallbacks();
-    m_httpApi.stop();
+    ShijimaManagerUiInternal::teardownTrayIcon();
     if (m_runtime->mascotTimer != 0) {
         killTimer(m_runtime->mascotTimer);
         m_runtime->mascotTimer = 0;
@@ -106,6 +108,24 @@ void ShijimaManager::closeEvent(QCloseEvent *event) {
         killTimer(m_runtime->windowObserverTimer);
         m_runtime->windowObserverTimer = 0;
     }
+    m_httpApi.stop();
+
+    while (!m_runtime->mascots.empty()) {
+        ShijimaWidget *mascot = m_runtime->mascots.front();
+        m_runtime->mascots.pop_front();
+        if (mascot != nullptr) {
+            mascot->close();
+            delete mascot;
+        }
+    }
+    m_runtime->mascotsById.clear();
+
+    if (m_ui->sandboxWidget != nullptr) {
+        m_ui->sandboxWidget->close();
+        delete m_ui->sandboxWidget;
+        m_ui->sandboxWidget = nullptr;
+    }
+
     event->accept();
 #else
     event->ignore();
