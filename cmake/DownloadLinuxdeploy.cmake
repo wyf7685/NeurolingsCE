@@ -27,20 +27,18 @@ foreach(_rel ${_tools})
   set(_dest "${TOOL_DIR}/${_name}")
 
   if(EXISTS "${_dest}")
-    message(STATUS "linuxdeploy: already present: ${_name}")
+    message(STATUS "linuxdeploy: already present: ${_dest}")
   else()
+    message(STATUS "linuxdeploy: downloading: ${_dest}")
     set(_url "${_base}/${_rel}")
     message(STATUS "Downloading ${_url}")
-    file(DOWNLOAD "${_url}" "${_dest}"
-      SHOW_PROGRESS
-      STATUS _status
-      TLS_VERIFY ON
-    )
-    list(GET _status 0 _code)
+    execute_process(
+      COMMAND curl -L -f --retry 3 --retry-delay 2 
+              -o "${_dest}" "${_url}" 
+      RESULT_VARIABLE _code)
     if(NOT _code EQUAL 0)
-      list(GET _status 1 _msg)
       file(REMOVE "${_dest}")
-      message(FATAL_ERROR "Download failed (${_code}): ${_url}\n${_msg}")
+      message(FATAL_ERROR "Download failed (${_code}): ${_url}")
     endif()
     file(CHMOD "${_dest}"
       PERMISSIONS
