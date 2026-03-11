@@ -37,6 +37,7 @@ void shutdown();
 void write(Level level, char const *category, std::string const& message,
     char const *file, int line, char const *function);
 QString sessionLogPath();
+QString sessionLogDirectoryPath();
 
 class Line {
 public:

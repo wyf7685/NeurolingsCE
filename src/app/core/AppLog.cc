@@ -22,21 +22,81 @@
 #include <cstdio>
 #include <mutex>
 #include <QString>
+#include <QDate>
 #include <QDateTime>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QCoreApplication>
 #include <QLoggingCategory>
 #include <QMessageLogContext>
-#include <QStandardPaths>
+#include <QProcessEnvironment>
 #include <QThread>
 
 namespace {
 
 std::mutex g_logMutex;
 QFile *g_logFile = nullptr;
+QString g_logDirectoryPath;
 QtMessageHandler g_previousHandler = nullptr;
 thread_local bool g_inMessageHandler = false;
+bool g_mirrorToStderr = false;
+
+QString applicationNameForFileSystem() {
+    QString appName = QCoreApplication::applicationName().trimmed();
+    if (appName.isEmpty()) {
+        appName = QStringLiteral("neurolingsce");
+    }
+    appName = appName.toLower();
+    for (QChar &ch : appName) {
+        if (!ch.isLetterOrNumber()) {
+            ch = '-';
+        }
+    }
+    return appName;
+}
+
+QString sessionTimestampForFileName() {
+    return QDateTime::currentDateTime().toString("HH-mm-ss-zzz");
+}
+
+QString dateFolderName() {
+    return QDate::currentDate().toString("yyyy-MM-dd");
+}
+
+QString preferredLogRootDirectory(QCoreApplication *app) {
+    QString currentDirLog = QDir::current().filePath("log");
+    if (!currentDirLog.isEmpty()) {
+        return currentDirLog;
+    }
+    if (app != nullptr) {
+        QString appDir = app->applicationDirPath();
+        if (!appDir.isEmpty()) {
+            return QDir(appDir).filePath("log");
+        }
+    }
+    return QDir::current().filePath("log");
+}
+
+bool tryOpenLogFileAtRoot(QString const& rootDirectoryPath) {
+    QDir rootDir(rootDirectoryPath);
+    QString datedDirectoryPath = rootDir.filePath(dateFolderName());
+    if (!rootDir.mkpath(dateFolderName())) {
+        return false;
+    }
+
+    QString fileName = QStringLiteral("%1-%2.log").arg(
+        applicationNameForFileSystem(), sessionTimestampForFileName());
+    auto *file = new QFile(QDir(datedDirectoryPath).filePath(fileName));
+    if (!file->open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
+        delete file;
+        return false;
+    }
+
+    g_logFile = file;
+    g_logDirectoryPath = datedDirectoryPath;
+    return true;
+}
 
 char const *levelName(AppLog::Level level) {
     switch (level) {
@@ -100,12 +160,20 @@ QString formatLine(AppLog::Level level, char const *category, QString const& mes
 void writeLineUnlocked(QString const& line) {
     QByteArray utf8 = line.toUtf8();
     utf8.append('\n');
-    std::fwrite(utf8.constData(), 1, static_cast<size_t>(utf8.size()), stderr);
-    std::fflush(stderr);
 
     if (g_logFile != nullptr && g_logFile->isOpen()) {
         g_logFile->write(utf8);
         g_logFile->flush();
+    }
+    else {
+        std::fwrite(utf8.constData(), 1, static_cast<size_t>(utf8.size()), stderr);
+        std::fflush(stderr);
+        return;
+    }
+
+    if (g_mirrorToStderr) {
+        std::fwrite(utf8.constData(), 1, static_cast<size_t>(utf8.size()), stderr);
+        std::fflush(stderr);
     }
 }
 
@@ -137,23 +205,19 @@ void appMessageHandler(QtMsgType type, QMessageLogContext const& context,
 
 namespace AppLog {
 
-void initialize(QCoreApplication *) {
+void initialize(QCoreApplication *app) {
     std::lock_guard<std::mutex> lock(g_logMutex);
+    g_mirrorToStderr = QProcessEnvironment::systemEnvironment()
+        .value("NEUROLINGSCE_LOG_STDERR") == "1";
     if (g_logFile == nullptr) {
-        QString basePath = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
-        if (basePath.isEmpty()) {
-            basePath = QDir::currentPath();
-        }
-        QDir dir(basePath);
-        dir.mkpath(".");
-        dir.mkpath("logs");
-
-        auto *file = new QFile(dir.filePath("logs/neurolingsce.log"));
-        if (file->open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
-            g_logFile = file;
-        }
-        else {
-            delete file;
+        QString preferredRoot = preferredLogRootDirectory(app);
+        if (!tryOpenLogFileAtRoot(preferredRoot)) {
+            QString fallbackRoot = app != nullptr
+                ? QDir(app->applicationDirPath()).filePath("log")
+                : QDir::current().filePath("log");
+            if (fallbackRoot != preferredRoot) {
+                tryOpenLogFileAtRoot(fallbackRoot);
+            }
         }
     }
 
@@ -179,6 +243,7 @@ void shutdown() {
         delete g_logFile;
         g_logFile = nullptr;
     }
+    g_logDirectoryPath = {};
 }
 
 void write(Level level, char const *category, std::string const& message,
@@ -194,6 +259,10 @@ QString sessionLogPath() {
         return g_logFile->fileName();
     }
     return {};
+}
+
+QString sessionLogDirectoryPath() {
+    return g_logDirectoryPath;
 }
 
 Line::Line(Level level, char const *category, char const *file, int line,

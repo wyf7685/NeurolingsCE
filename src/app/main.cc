@@ -17,6 +17,7 @@
 // 
 
 #include <QApplication>
+#include <QCoreApplication>
 #include <QIcon>
 #include <QDir>
 #include <QStandardPaths>
@@ -33,18 +34,23 @@
 
 int main(int argc, char **argv) {
     if (argc > 1) {
-        return shijimaRunCli(argc, argv);
+        QCoreApplication app(argc, argv);
+        app.setApplicationName(QStringLiteral(APP_NAME));
+        AppLog::initialize(&app);
+        int ret = shijimaRunCli(argc, argv);
+        AppLog::shutdown();
+        return ret;
     }
     Platform::initialize(argc, argv);
     #ifdef SHIJIMA_LOGGING_ENABLED
         shijima::set_log_level(SHIJIMA_LOG_PARSER | SHIJIMA_LOG_WARNINGS);
     #endif
     QApplication app(argc, argv);
-    AppLog::initialize(&app);
-    eApp->init();
     app.setApplicationName(QStringLiteral(APP_NAME));
     app.setApplicationDisplayName(QStringLiteral(APP_DISPLAY_NAME));
     app.setApplicationDisplayName("NeurolingsCE[Shijima-Qt Edition]");
+    AppLog::initialize(&app);
+    eApp->init();
     {
         QIcon appIcon { QStringLiteral(":/neurolingsce.ico") };
         if (appIcon.isNull()) {

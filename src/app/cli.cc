@@ -17,6 +17,7 @@
 // 
 
 #include "shijima-qt/cli.hpp"
+#include "shijima-qt/AppLog.hpp"
 #include <QString>
 #include <QVariant>
 #include <QMap>
@@ -40,6 +41,20 @@ static std::ostream *cerrPt;
 
 #define cout (*coutPt)
 #define cerr (*cerrPt)
+
+static void cliError(std::string const& message) {
+    APP_LOG_ERROR("cli") << message;
+    cerr << message << std::endl;
+}
+
+static void cliWarn(std::string const& message) {
+    APP_LOG_WARN("cli") << message;
+    cerr << message << std::endl;
+}
+
+static void cliInfo(std::string const& message) {
+    APP_LOG_INFO("cli") << message;
+}
 
 class Argument {
 private:
@@ -178,25 +193,25 @@ static bool parseAPIResult(httplib::Result const& res, QJsonObject &object) {
     QJsonParseError error;
     auto doc = QJsonDocument::fromJson(bytes, &error);
     if (error.error != QJsonParseError::NoError) {
-        cerr << "ERROR: Failed to parse response: " <<
-            error.errorString().toStdString() << std::endl;
+        cliError("ERROR: Failed to parse response: "
+            + error.errorString().toStdString());
         return false;
     }
     else if (!doc.isObject()) {
-        cerr << "ERROR: Response JSON does not contain an object" << std::endl;
+        cliError("ERROR: Response JSON does not contain an object");
         return false;
     }
     object = doc.object();
     if (object.contains("error")) {
         auto value = object["error"];
-        cerr << "ERROR: API request failed: ";
+        std::string message = "ERROR: API request failed: ";
         if (value.isString()) {
-            cerr << value.toString().toStdString();
+            message += value.toString().toStdString();
         }
         else {
-            cerr << "Unknown error";
+            message += "Unknown error";
         }
-        cerr << std::endl;
+        cliError(message);
         return false;
     }
     return true;
@@ -208,7 +223,7 @@ static bool parseAPIResult(httplib::Result const& res) {
 }
 
 static int notRunning() {
-    cerr << "Request failed. Is Shijima-Qt running?" << std::endl;
+    cliError("Request failed. Is Shijima-Qt running?");
     return EXIT_FAILURE;
 }
 
@@ -216,7 +231,7 @@ static bool parseShimejiAttributes(QJsonObject &object, QVariant const& behavior
     QVariant const& x, QVariant const& y)
 {
     if (x.isNull() != y.isNull()) {
-        cerr << "ERROR: X and Y must be specified together" << std::endl;
+        cliError("ERROR: X and Y must be specified together");
         return false;
     }
     else if (!x.isNull()) {
@@ -289,15 +304,14 @@ static int getMascotID(httplib::Client &client, QVariant &idVariant,
     if (int convertedId = idVariant.toInt(&ok); ok) {
         idVariant = convertedId;
         if (selectors[0] != "") {
-            cerr << "ERROR: You can't specify a numeric ID and a selector at" <<
-                " the same time" << std::endl;
+            cliError("ERROR: You can't specify a numeric ID and a selector at the same time");
             return EXIT_FAILURE;
         }
         if (convertedId >= 0) {
             return EXIT_SUCCESS;
         }
         else {
-            cerr << "ERROR: ID must be greater than or equal to 0" << std::endl;
+            cliError("ERROR: ID must be greater than or equal to 0");
             return EXIT_FAILURE;
         }
     }
@@ -318,9 +332,9 @@ static int getMascotID(httplib::Client &client, QVariant &idVariant,
         } },
     };
     if (!parsers.contains(str)) {
-        cerr << "Invalid auto ID, expected: " << std::endl;
+        cliError("Invalid auto ID.");
         auto keys = parsers.keys();
-        cerr << keys.join(", ").toStdString() << std::endl;
+        cliWarn("Expected one of: " + keys.join(", ").toStdString());
         return EXIT_FAILURE;
     }
     for (auto &selector : selectors) {
@@ -337,7 +351,7 @@ static int getMascotID(httplib::Client &client, QVariant &idVariant,
             }
             auto mascots = object["mascots"];
             if (!mascots.isArray()) {
-                cerr << "ERROR: Malformed response" << std::endl;
+                cliError("ERROR: Malformed response");
                 return EXIT_FAILURE;
             }
             auto array = mascots.toArray();
@@ -351,13 +365,13 @@ static int getMascotID(httplib::Client &client, QVariant &idVariant,
             return notRunning();
         }
     }
-    cerr << "ERROR: Failed to determine ID (are any mascots spawned?)"
-        << std::endl;
+    cliError("ERROR: Failed to determine ID (are any mascots spawned?)");
     return EXIT_FAILURE;
 }
 
 static int cliMain(int argc, char **argv) {
     std::string action = argv[1];
+    cliInfo("CLI command started action=\"" + action + "\"");
     httplib::Client client { "http://127.0.0.1:32456" };
     if (action == "list") {
         QVariant selector, json { false };
@@ -387,7 +401,7 @@ static int cliMain(int argc, char **argv) {
             else {
                 auto mascotsValue = object["mascots"];
                 if (!mascotsValue.isArray()) {
-                    cerr << "ERROR: Malformed response" << std::endl;
+                    cliError("ERROR: Malformed response");
                     return EXIT_FAILURE;
                 }
                 auto mascots = mascotsValue.toArray();
@@ -414,8 +428,7 @@ static int cliMain(int argc, char **argv) {
             return EXIT_FAILURE;
         }
         if (json.toBool() && sortById.toBool()) {
-            cerr << "ERROR: --json and --sort-by-id cannot be used together." <<
-                std::endl;
+            cliError("ERROR: --json and --sort-by-id cannot be used together.");
             return EXIT_FAILURE;
         }
         if (auto res = client.Get("/shijima/api/v1/loadedMascots")) {
@@ -432,7 +445,7 @@ static int cliMain(int argc, char **argv) {
             else {
                 auto loadedValue = object["loaded_mascots"];
                 if (!loadedValue.isArray()) {
-                    cerr << "ERROR: Malformed response" << std::endl;
+                    cliError("ERROR: Malformed response");
                     return EXIT_FAILURE;
                 }
                 QJsonArray loaded = loadedValue.toArray();
@@ -478,7 +491,7 @@ static int cliMain(int argc, char **argv) {
         }
         QJsonObject object;
         if (dataId.isNull() == name.isNull()) {
-            cerr << "ERROR: You must specify one of name or data-id." << std::endl;
+            cliError("ERROR: You must specify one of name or data-id.");
             args.printUsage(argc, argv);
             return EXIT_FAILURE;
         }
@@ -502,7 +515,7 @@ static int cliMain(int argc, char **argv) {
                 if (!printJson.toBool()) {
                     auto mascot = object["mascot"];
                     if (!mascot.isObject()) {
-                        cerr << "ERROR: Malformed response" << std::endl;
+                        cliError("ERROR: Malformed response");
                         ret = EXIT_FAILURE;
                     }
                     else {
@@ -553,7 +566,7 @@ static int cliMain(int argc, char **argv) {
                 if (!printJson.toBool()) {
                     auto mascot = object["mascot"];
                     if (!mascot.isObject()) {
-                        cerr << "ERROR: Malformed response" << std::endl;
+                        cliError("ERROR: Malformed response");
                         ret = EXIT_FAILURE;
                     }
                     else {
@@ -627,10 +640,8 @@ static int cliMain(int argc, char **argv) {
         }
     }
     else {
-        cerr << "Usage: " << argv[0] << " [--quiet] <command> [options...]"
-            << std::endl;
-        cerr << "   Possible commands are: list, list-loaded, spawn, "
-            "alter, dismiss, dismiss-all" << std::endl;
+        cliError(std::string("Usage: ") + argv[0] + " [--quiet] <command> [options...]");
+        cliWarn("Possible commands are: list, list-loaded, spawn, alter, dismiss, dismiss-all");
         return EXIT_FAILURE;
     }
     return EXIT_SUCCESS;
@@ -673,6 +684,7 @@ int shijimaRunCli(int argc, char **argv) {
         #endif
     }
     int ret = cliMain(argc, argv);
+    APP_LOG_INFO("cli") << "CLI command finished exit_code=" << ret;
     #ifdef _WIN32
         if (!quiet) {
             auto stream = static_cast<std::stringstream *>(coutPt);
