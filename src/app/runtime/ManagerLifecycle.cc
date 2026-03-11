@@ -18,7 +18,7 @@
 
 #include "shijima-qt/ShijimaManager.hpp"
 
-#include "ShijimaManagerRuntimeInternal.hpp"
+#include "ManagerRuntimeHelpers.hpp"
 
 #include <QCloseEvent>
 #include <QGuiApplication>

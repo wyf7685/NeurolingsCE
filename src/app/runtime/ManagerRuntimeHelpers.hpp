@@ -18,19 +18,14 @@
 
 #pragma once
 
-#include <QString>
+#include <functional>
 
-#include "../ShijimaManagerState.hpp"
+#include "../ManagerState.hpp"
 
-class QColor;
-class QListWidget;
-class ShijimaManager;
+namespace ShijimaManagerRuntimeInternal {
 
-namespace ShijimaManagerUiInternal {
+constexpr int kSubtickCount = 4;
 
-QString colorToString(QColor const& color);
-void applyMascotListTheme(QListWidget& listWidget);
-void refreshTrayMenu(ShijimaManager *manager);
-void setupTrayIcon(ShijimaManager *manager);
+void dispatchToMainThread(std::function<void()> callback);
 
 }

@@ -12,9 +12,9 @@ NeurolingsCE — a fork of Shijima-Qt, a cross-platform desktop shimeji (mascot 
 
 ```
 NeurolingsCE/
-├── src/app/              # Qt application layer (13 .cc files)
+├── src/app/              # Qt application layer (core/runtime/ui slices)
 ├── src/platform/Platform/ # OS abstraction: Windows/Linux/macOS
-├── include/shijima-qt/   # Public headers (1:1 mirror of src/app/)
+├── include/shijima-qt/   # Public headers + nested UI forwarding headers
 ├── libshijima/           # [submodule] Core mascot simulation engine
 ├── libshimejifinder/     # [submodule] Archive import/extract for mascot packs
 ├── cpp-httplib/          # [submodule] HTTP server (header-only)
@@ -34,13 +34,16 @@ NeurolingsCE/
 | Task | Location | Notes |
 |------|----------|-------|
 | App entry point | `src/app/main.cc` | Checks single-instance via HTTP ping, creates `ShijimaManager` |
-| Mascot lifecycle | `src/app/ShijimaManager.cc` + header in `include/` | Spawning, ticking, environment sync, drag-drop import |
-| Mascot rendering | `src/app/ShijimaWidget.cc` | Per-mascot transparent widget, paint/mouse events |
-| HTTP REST API | `src/app/ShijimaHttpApi.cc` | Localhost :32456, docs at `src/docs/HTTP-API.md` |
+| Mascot lifecycle | `src/app/runtime/ManagerMascotRuntime.cc` + `src/app/runtime/ManagerLifecycle.cc` | Spawning, ticking, unload/reload, shutdown |
+| Environment sync | `src/app/runtime/ManagerEnvironmentSync.cc` | Screen env, windowed mode, active window sync |
+| Import workflow | `src/app/runtime/ManagerImportWorkflow.cc` | Drag-drop import, import-on-show, background extraction |
+| Mascot rendering | `src/app/ui/mascot/MascotWidgetRendering.cc` | Per-mascot transparent widget painting + hit test |
+| Mascot interaction | `src/app/ui/mascot/MascotWidgetInteraction.cc` | Dragging, click handling, context menu, speech bubble trigger |
+| HTTP REST API | `src/app/core/http/ShijimaHttpApi.cc` | Localhost :32456, docs at `src/docs/HTTP-API.md` |
 | Platform abstraction | `src/platform/Platform/` | See `src/platform/Platform/AGENTS.md` |
-| Asset loading | `src/app/AssetLoader.cc` | Async mascot pack loading |
-| Sound support | `src/app/SoundEffectManager.cc` | Optional, gated by `SHIJIMA_USE_QTMULTIMEDIA` |
-| Context menu | `src/app/ShijimaContextMenu.cc` | Right-click actions on mascots |
+| Asset loading | `src/app/core/assets/AssetLoader.cc` | Async mascot pack loading |
+| Sound support | `src/app/core/audio/SoundEffectManager.cc` | Optional, gated by `SHIJIMA_USE_QTMULTIMEDIA` |
+| Context menu | `src/app/ui/menus/ShijimaContextMenu.cc` + `ContextMenuActions.cc` | Right-click actions on mascots |
 | CLI mode | `src/app/cli.cc` | Invoked when `argc > 1` |
 | Build config (CMake) | `CMakeLists.txt` | Primary for MSVC/Visual Studio |
 | Build config (Make) | `Makefile` + `common.mk` | Primary for MinGW/GCC/Clang |
@@ -49,8 +52,9 @@ NeurolingsCE/
 
 ## CONVENTIONS
 
-- **Header/source split**: All public headers in `include/shijima-qt/*.hpp`, implementations in `src/app/*.cc`. Extension is `.cc` (not `.cpp`).
+- **Header/source split**: Public headers live in `include/shijima-qt/`; app implementations live under `src/app/core`, `src/app/runtime`, and `src/app/ui`. Extension is `.cc` (not `.cpp`).
 - **Include style**: `#include "shijima-qt/Foo.hpp"` for project headers, `#include <shijima/...>` for libshijima, `#include "Platform/..."` for platform layer.
+- **Implementation file naming**: Use `Subject + Responsibility` for split implementation files, e.g. `ManagerImportWorkflow.cc`, `ManagerWindowSetup.cc`, `MascotWidgetRendering.cc`.
 - **C++ standard**: C++17 (`-std=c++17`).
 - **Header guard**: `#pragma once` everywhere.
 - **License header**: GPLv3 boilerplate at top of every source/header (pixelomer copyright).

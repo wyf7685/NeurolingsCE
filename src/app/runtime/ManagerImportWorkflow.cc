@@ -17,8 +17,8 @@
 //
 
 #include "shijima-qt/ShijimaManager.hpp"
-#include "../ui/ShijimaManagerUiInternal.hpp"
-#include "ShijimaManagerRuntimeInternal.hpp"
+#include "../ui/ManagerUiHelpers.hpp"
+#include "ManagerRuntimeHelpers.hpp"
 #include <exception>
 #include <iostream>
 #include <QDragEnterEvent>

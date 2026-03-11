@@ -109,7 +109,7 @@ See detailed documentation at [src/docs/HTTP-API.md](src/docs/HTTP-API.md).
 
 ```
 NeurolingsCE/
-├── src/app/              # Qt application layer
+├── src/app/              # Qt application layer (split into core/runtime/ui)
 ├── src/platform/Platform/ # Platform abstraction (Windows/Linux/macOS)
 ├── include/shijima-qt/   # Public headers
 ├── libshijima/           # [submodule] Core mascot simulation engine
@@ -120,6 +120,14 @@ NeurolingsCE/
 ├── src/assets/           # Bundled default mascot assets
 └── src/packaging/        # Desktop entry, icons, AppStream metadata
 ```
+
+`src/app` is now organized into three responsibility-focused layers:
+
+- `src/app/core/`: asset loading, audio, HTTP API, and archive import helpers
+- `src/app/runtime/`: `ShijimaManager` environment sync, import workflow, lifecycle, and runtime scheduling
+- `src/app/ui/`: manager window setup, tray integration, page builders, mascot widget interaction, dialogs, and widgets
+
+Implementation slices follow a `Subject + Responsibility` naming style such as `ManagerImportWorkflow.cc`, `ManagerWindowSetup.cc`, and `MascotWidgetRendering.cc`, so file names map more directly to business logic.
 
 ## Credits
 

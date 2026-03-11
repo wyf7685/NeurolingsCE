@@ -18,7 +18,7 @@
 
 #include "shijima-qt/ShijimaManager.hpp"
 #include "shijima-qt/ui/mascot/ShijimaWidget.hpp"
-#include "ShijimaManagerRuntimeInternal.hpp"
+#include "ManagerRuntimeHelpers.hpp"
 #include <cmath>
 #include <iostream>
 #include <QCursor>

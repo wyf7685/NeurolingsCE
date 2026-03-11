@@ -18,8 +18,8 @@
 
 #include "shijima-qt/ShijimaManager.hpp"
 
-#include "../runtime/ShijimaManagerRuntimeInternal.hpp"
-#include "ShijimaManagerUiInternal.hpp"
+#include "../runtime/ManagerRuntimeHelpers.hpp"
+#include "ManagerUiHelpers.hpp"
 
 #include <iostream>
 #include <memory>

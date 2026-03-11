@@ -18,5 +18,5 @@
 
 #pragma once
 
-#include "runtime/ShijimaManagerRuntimeState.hpp"
-#include "ui/ShijimaManagerUiState.hpp"
+#include "runtime/ManagerRuntimeState.hpp"
+#include "ui/ManagerUiState.hpp"

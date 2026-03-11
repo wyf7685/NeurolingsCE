@@ -9,32 +9,32 @@ SOURCES = src/app/main.cc \
 	src/app/core/assets/MascotData.cc \
 	src/app/core/assets/AssetLoader.cc \
 	src/app/ui/menus/ShijimaContextMenu.cc \
-	src/app/ui/menus/ShijimaContextMenuActions.cc \
+	src/app/ui/menus/ContextMenuActions.cc \
 	src/app/core/audio/SoundEffectManager.cc \
 	src/app/core/http/ShijimaHttpApi.cc \
 	src/app/core/import/SimpleZipImporter.cc \
-	src/app/runtime/ShijimaManagerEnvironment.cc \
-	src/app/runtime/ShijimaManagerImport.cc \
-	src/app/runtime/ShijimaManagerLifecycle.cc \
-	src/app/runtime/ShijimaManagerMascots.cc \
-	src/app/ui/ShijimaManagerWindow.cc \
-	src/app/ui/mascot/ShijimaWidgetInteraction.cc \
-	src/app/ui/mascot/ShijimaWidgetLifecycle.cc \
-	src/app/ui/mascot/ShijimaWidgetRendering.cc \
+	src/app/runtime/ManagerEnvironmentSync.cc \
+	src/app/runtime/ManagerImportWorkflow.cc \
+	src/app/runtime/ManagerLifecycle.cc \
+	src/app/runtime/ManagerMascotRuntime.cc \
+	src/app/ui/ManagerWindowSetup.cc \
+	src/app/ui/mascot/MascotWidgetInteraction.cc \
+	src/app/ui/mascot/MascotWidgetLifecycle.cc \
+	src/app/ui/mascot/MascotWidgetRendering.cc \
 	DefaultMascot.cc \
 	src/app/ui/dialogs/common/ForcedProgressDialog.cc \
 	src/app/ui/dialogs/inspector/ShimejiInspectorDialog.cc \
-	src/app/ui/dialogs/inspector/ShimejiInspectorDialogRows.cc \
+	src/app/ui/dialogs/inspector/ShimejiInspectorRows.cc \
 	src/app/ui/dialogs/licenses/ShijimaLicensesDialog.cc \
-	src/app/ui/ShijimaManagerActions.cc \
-	src/app/ui/ShijimaManagerTray.cc \
-	src/app/ui/interface/ShijimaManagerAboutPage.cc \
-	src/app/ui/interface/ShijimaManagerHomePage.cc \
-	src/app/ui/interface/ShijimaManagerInterface.cc \
-	src/app/ui/interface/ShijimaManagerSettingsPage.cc \
+	src/app/ui/ManagerUiActions.cc \
+	src/app/ui/ManagerTrayIcon.cc \
+	src/app/ui/interface/ManagerAboutSection.cc \
+	src/app/ui/interface/ManagerHomePage.cc \
+	src/app/ui/interface/ManagerNavigation.cc \
+	src/app/ui/interface/ManagerSettingsPage.cc \
 	src/app/cli.cc \
 	src/app/ui/widgets/SpeechBubbleWidget.cc \
-	src/app/ui/widgets/SpeechBubbleWidgetText.cc \
+	src/app/ui/widgets/SpeechBubbleTextCatalog.cc \
 	miniz/miniz.c \
 	src/resources/resources.rc \
 	qrc_resources.cc \

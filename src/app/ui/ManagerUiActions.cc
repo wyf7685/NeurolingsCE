@@ -18,8 +18,8 @@
 
 #include "shijima-qt/ShijimaManager.hpp"
 #include "shijima-qt/MascotData.hpp"
-#include "../runtime/ShijimaManagerRuntimeInternal.hpp"
-#include "ShijimaManagerUiInternal.hpp"
+#include "../runtime/ManagerRuntimeHelpers.hpp"
+#include "ManagerUiHelpers.hpp"
 #include <array>
 #include <cstdint>
 #include <cstdio>

@@ -17,7 +17,7 @@
 //
 
 #include "shijima-qt/ShijimaManager.hpp"
-#include "../ShijimaManagerUiInternal.hpp"
+#include "../ManagerUiHelpers.hpp"
 #include <QDesktopServices>
 #include <QHBoxLayout>
 #include <QListWidget>

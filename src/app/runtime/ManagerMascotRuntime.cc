@@ -19,7 +19,7 @@
 #include "shijima-qt/ShijimaManager.hpp"
 #include "shijima-qt/MascotData.hpp"
 #include "shijima-qt/ui/mascot/ShijimaWidget.hpp"
-#include "../ui/ShijimaManagerUiInternal.hpp"
+#include "../ui/ManagerUiHelpers.hpp"
 #include <filesystem>
 #include <iostream>
 #include <optional>
