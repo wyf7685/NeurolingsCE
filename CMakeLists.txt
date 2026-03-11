@@ -175,7 +175,9 @@ target_sources(NeurolingsCE PRIVATE
   src/app/runtime/ShijimaManagerEnvironment.cc
   src/app/runtime/ShijimaManagerImport.cc
   src/app/runtime/ShijimaManagerMascots.cc
-  src/app/ShijimaWidget.cc
+  src/app/ui/mascot/ShijimaWidgetInteraction.cc
+  src/app/ui/mascot/ShijimaWidgetLifecycle.cc
+  src/app/ui/mascot/ShijimaWidgetRendering.cc
   src/app/ui/ShijimaManagerActions.cc
   src/app/ui/dialogs/common/ForcedProgressDialog.cc
   src/app/ui/dialogs/inspector/ShimejiInspectorDialog.cc

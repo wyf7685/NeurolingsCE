@@ -16,7 +16,9 @@ SOURCES = src/app/main.cc \
 	src/app/runtime/ShijimaManagerEnvironment.cc \
 	src/app/runtime/ShijimaManagerImport.cc \
 	src/app/runtime/ShijimaManagerMascots.cc \
-	src/app/ShijimaWidget.cc \
+	src/app/ui/mascot/ShijimaWidgetInteraction.cc \
+	src/app/ui/mascot/ShijimaWidgetLifecycle.cc \
+	src/app/ui/mascot/ShijimaWidgetRendering.cc \
 	DefaultMascot.cc \
 	src/app/ui/dialogs/common/ForcedProgressDialog.cc \
 	src/app/ui/dialogs/inspector/ShimejiInspectorDialog.cc \
