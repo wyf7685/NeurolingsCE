@@ -12,7 +12,6 @@ SOURCES = src/app/main.cc \
 	src/app/ui/menus/ContextMenuActions.cc \
 	src/app/core/audio/SoundEffectManager.cc \
 	src/app/core/http/ShijimaHttpApi.cc \
-	src/app/core/import/SimpleZipImporter.cc \
 	src/app/runtime/ManagerEnvironmentSync.cc \
 	src/app/runtime/ManagerImportWorkflow.cc \
 	src/app/runtime/ManagerLifecycle.cc \
@@ -35,7 +34,6 @@ SOURCES = src/app/main.cc \
 	src/app/cli.cc \
 	src/app/ui/widgets/SpeechBubbleWidget.cc \
 	src/app/ui/widgets/SpeechBubbleTextCatalog.cc \
-	miniz/miniz.c \
 	src/resources/resources.rc \
 	qrc_resources.cc \
 	qrc_i18n.cc
@@ -81,7 +79,6 @@ CXXFLAGS += -DSHIJIMA_USE_QTMULTIMEDIA=0
 endif
 
 CXXFLAGS += -Iinclude -Isrc/platform -Ilibshijima -Ilibshimejifinder -Icpp-httplib -IElaWidgetTools/ElaWidgetTools -I. -DNEUROLINGSCE_VERSION='"$(NEUROLINGSCE_VERSION)"'
-CPPFLAGS += -Iminiz
 PKG_LIBS += libarchive
 PUBLISH_DLL = $(addprefix Qt6,$(QT_LIBS))
 

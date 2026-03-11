@@ -62,7 +62,7 @@ NeurolingsCE/
 - **Singleton pattern**: `ShijimaManager::defaultManager()` is the global singleton.
 - **Template trick**: `PlatformWidget<T>` CRTP-like template wraps QWidget/QMainWindow for cross-desktop behavior.
 - **Conditional compilation**: Platform code via `#ifdef __linux__`, `WIN32`, `APPLE` + CMake `if(WIN32)/elseif(APPLE)/elseif(UNIX)`.
-- **Feature flags**: `SHIJIMA_USE_QTMULTIMEDIA`, `SHIJIMA_WITH_SHIMEJIFINDER`, `SHIJIMA_WITH_DEFAULT_MASCOT`.
+- **Feature flags**: `SHIJIMA_USE_QTMULTIMEDIA`, `SHIJIMA_WITH_DEFAULT_MASCOT`.
 
 ## ANTI-PATTERNS (THIS PROJECT)
 
