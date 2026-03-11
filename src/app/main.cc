@@ -19,8 +19,6 @@
 #include <QApplication>
 #include <QCoreApplication>
 #include <QIcon>
-#include <QDir>
-#include <QStandardPaths>
 #include <QMessageBox>
 #include "shijima-qt/AppLog.hpp"
 #include <shijima/log.hpp>
@@ -30,7 +28,6 @@
 #include "shijima-qt/cli.hpp"
 #include <httplib.h>
 #include "ElaApplication.h"
-#include <QFile>
 
 int main(int argc, char **argv) {
     if (argc > 1) {
@@ -60,15 +57,6 @@ int main(int argc, char **argv) {
             app.setWindowIcon(appIcon);
         }
     }
-    // Global stylesheet disabled — ElaWidgetTools provides its own theme system.
-    // The old style.qss would conflict with ElaTheme's dynamic theming.
-    // {
-    //     QFile styleFile(QStringLiteral(":/style.qss"));
-    //     if (styleFile.open(QFile::ReadOnly | QFile::Text)) {
-    //         app.setStyleSheet(QString::fromUtf8(styleFile.readAll()));
-    //         styleFile.close();
-    //     }
-    // }
     try {
         httplib::Client pingClient { "http://127.0.0.1:32456" };
         pingClient.set_connection_timeout(0, 500000);

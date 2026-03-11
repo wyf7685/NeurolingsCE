@@ -1,9 +1,0 @@
-[Desktop Entry]
-Type=Application
-Version=1.0
-Name=@APP_NAME@
-Comment=@APP_DESCRIPTION@
-Exec=@APP_EXECUTABLE@
-Icon=@APP_ICON_NAME@
-Terminal=false
-Categories=@APP_DESKTOP_CATEGORIES@
