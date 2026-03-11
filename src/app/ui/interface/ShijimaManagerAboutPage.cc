@@ -26,7 +26,7 @@
 #include <QPushButton>
 #include <QUrl>
 #include <QVBoxLayout>
-#include "shijima-qt/ShijimaLicensesDialog.hpp"
+#include "shijima-qt/ui/dialogs/licenses/ShijimaLicensesDialog.hpp"
 #include "ElaTheme.h"
 
 #ifndef NEUROLINGSCE_VERSION

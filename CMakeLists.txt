@@ -167,7 +167,6 @@ target_sources(NeurolingsCE PRIVATE
   src/app/Asset.cc
   src/app/MascotData.cc
   src/app/AssetLoader.cc
-  src/app/ForcedProgressDialog.cc
   src/app/ShijimaContextMenu.cc
   src/app/ShijimaManager.cc
   src/app/runtime/ShijimaManagerEnvironment.cc
@@ -175,10 +174,12 @@ target_sources(NeurolingsCE PRIVATE
   src/app/runtime/ShijimaManagerMascots.cc
   src/app/ShijimaWidget.cc
   src/app/SoundEffectManager.cc
-  src/app/ShijimaLicensesDialog.cc
-  src/app/ShimejiInspectorDialog.cc
   src/app/ShijimaHttpApi.cc
   src/app/ui/ShijimaManagerActions.cc
+  src/app/ui/dialogs/common/ForcedProgressDialog.cc
+  src/app/ui/dialogs/inspector/ShimejiInspectorDialog.cc
+  src/app/ui/dialogs/inspector/ShimejiInspectorDialogRows.cc
+  src/app/ui/dialogs/licenses/ShijimaLicensesDialog.cc
   src/app/ui/ShijimaManagerTray.cc
   src/app/ui/interface/ShijimaManagerAboutPage.cc
   src/app/ui/interface/ShijimaManagerHomePage.cc
@@ -192,8 +193,8 @@ target_sources(NeurolingsCE PRIVATE
   # Headers with Q_OBJECT (needed for AUTOMOC)
   include/shijima-qt/ShijimaManager.hpp
   include/shijima-qt/ShijimaContextMenu.hpp
-  include/shijima-qt/ShijimaLicensesDialog.hpp
-  include/shijima-qt/ShimejiInspectorDialog.hpp
+  include/shijima-qt/ui/dialogs/licenses/ShijimaLicensesDialog.hpp
+  include/shijima-qt/ui/dialogs/inspector/ShimejiInspectorDialog.hpp
 
   include/shijima-qt/SpeechBubbleWidget.hpp
   src/platform/Platform/Platform.hpp

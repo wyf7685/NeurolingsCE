@@ -16,7 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // 
 
-#include "shijima-qt/ForcedProgressDialog.hpp"
+#include "shijima-qt/ui/dialogs/common/ForcedProgressDialog.hpp"
 #include <QCloseEvent>
 
 void ForcedProgressDialog::closeEvent(QCloseEvent *event) {

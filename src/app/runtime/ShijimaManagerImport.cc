@@ -27,7 +27,7 @@
 #include <QPushButton>
 #include <QUrl>
 #include <QtConcurrent>
-#include "shijima-qt/ForcedProgressDialog.hpp"
+#include "shijima-qt/ui/dialogs/common/ForcedProgressDialog.hpp"
 #if SHIJIMA_WITH_SHIMEJIFINDER
 #include <shimejifinder/analyze.hpp>
 #endif

@@ -8,7 +8,6 @@ SOURCES = src/app/main.cc \
 	src/app/Asset.cc \
 	src/app/MascotData.cc \
 	src/app/AssetLoader.cc \
-	src/app/ForcedProgressDialog.cc \
 	src/app/ShijimaContextMenu.cc \
 	src/app/ShijimaManager.cc \
 	src/app/runtime/ShijimaManagerEnvironment.cc \
@@ -16,10 +15,12 @@ SOURCES = src/app/main.cc \
 	src/app/runtime/ShijimaManagerMascots.cc \
 	src/app/ShijimaWidget.cc \
 	src/app/SoundEffectManager.cc \
-	src/app/ShijimaLicensesDialog.cc \
-	src/app/ShimejiInspectorDialog.cc \
 	DefaultMascot.cc \
 	src/app/ShijimaHttpApi.cc \
+	src/app/ui/dialogs/common/ForcedProgressDialog.cc \
+	src/app/ui/dialogs/inspector/ShimejiInspectorDialog.cc \
+	src/app/ui/dialogs/inspector/ShimejiInspectorDialogRows.cc \
+	src/app/ui/dialogs/licenses/ShijimaLicensesDialog.cc \
 	src/app/ui/ShijimaManagerActions.cc \
 	src/app/ui/ShijimaManagerTray.cc \
 	src/app/ui/interface/ShijimaManagerAboutPage.cc \
@@ -173,8 +174,8 @@ DefaultMascot.cc: $(DEFAULT_MASCOT_FILES) Makefile src/tools/bundle-default.sh
 	./src/tools/bundle-default.sh $(DEFAULT_MASCOT_FILES) > '$@-'
 	mv '$@-' '$@'
 
-src/app/ShijimaLicensesDialog.cc: licenses_generated.hpp
-	touch src/app/ShijimaLicensesDialog.cc
+src/app/ui/dialogs/licenses/ShijimaLicensesDialog.cc: licenses_generated.hpp
+	touch src/app/ui/dialogs/licenses/ShijimaLicensesDialog.cc
 
 licenses_generated.hpp: $(LICENSE_FILES) Makefile
 	echo 'static const char *shijima_licenses = R"(' > licenses_generated.hpp
@@ -252,7 +253,8 @@ ElaWidgetTools/build/ElaWidgetTools/libElaWidgetTools.a: ElaWidgetTools/build/Ma
 
 clean::
 	rm -rf publish/$(PLATFORM)/$(CONFIG) libshijima/build libshimejifinder/build ElaWidgetTools/build
-	rm -f $(OBJECTS) $(APP_EXECUTABLE).a $(APP_EXECUTABLE)$(EXE) $(APP_NAME).AppImage qrc_resources.cc qrc_i18n.cc $(QM_FILES) src/app/*.moc
+	rm -f $(OBJECTS) $(APP_EXECUTABLE).a $(APP_EXECUTABLE)$(EXE) $(APP_NAME).AppImage qrc_resources.cc qrc_i18n.cc $(QM_FILES)
+	find src/app -name '*.moc' -delete
 	$(MAKE) -C src/platform/Platform clean
 
 install:

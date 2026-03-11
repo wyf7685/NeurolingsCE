@@ -30,7 +30,7 @@
 #include <QTextStream>
 #include <shijima/shijima.hpp>
 #include "Platform/Platform.hpp"
-#include "shijima-qt/ShimejiInspectorDialog.hpp"
+#include "shijima-qt/ui/dialogs/inspector/ShimejiInspectorDialog.hpp"
 #include "shijima-qt/AssetLoader.hpp"
 #include "shijima-qt/ShijimaContextMenu.hpp"
 #include "shijima-qt/ShijimaManager.hpp"
