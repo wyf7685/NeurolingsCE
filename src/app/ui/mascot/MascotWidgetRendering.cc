@@ -28,20 +28,11 @@
 #include "Platform/Platform.hpp"
 #include "shijima-qt/AssetLoader.hpp"
 
-#if SHIJIMA_WITH_SHIMEJIFINDER
-#include <shimejifinder/utils.hpp>
-#endif
-
 Asset const& ShijimaWidget::getActiveAsset() {
     auto &name = m_mascot->state->active_frame.get_name(m_mascot->state->looking_right);
     std::string lowerName = name;
-#if SHIJIMA_WITH_SHIMEJIFINDER
-    lowerName = shimejifinder::to_lower(lowerName);
-#else
-    std::transform(lowerName.begin(), lowerName.end(), lowerName.begin(), [](unsigned char c) {
-        return (char)std::tolower(c);
-    });
-#endif
+    std::transform(lowerName.begin(), lowerName.end(), lowerName.begin(),
+                   [](unsigned char c) { return (char)std::tolower(c); });
     auto imagePath = QDir::cleanPath(m_data->imgRoot()
         + QDir::separator() + QString::fromStdString(lowerName));
     return AssetLoader::defaultLoader()->loadAsset(imagePath);

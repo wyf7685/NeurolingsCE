@@ -126,8 +126,8 @@ if(MSVC AND TARGET ElaWidgetTools)
   set_property(TARGET ElaWidgetTools PROPERTY MSVC_RUNTIME_LIBRARY "${_shijima_msvc_runtime}")
 endif()
 target_compile_options(ElaWidgetTools PRIVATE
-    $<$<CXX_COMPILER_ID:GNU,Clang>:-w>
-    $<$<CXX_COMPILER_ID:MSVC>:/W0>
+  $<$<CXX_COMPILER_ID:GNU,Clang>:-w>
+  $<$<CXX_COMPILER_ID:MSVC>:/W0>
 )
 
 # libshimejifinder's upstream CMakeLists.txt relies on a bash script (bin2cpp.sh)
@@ -137,24 +137,18 @@ target_compile_options(ElaWidgetTools PRIVATE
 # than the shared-only 'archive' target, making it fully cross-platform.
 # NOTE: When building on Windows with MinGW, use the compiler bundled with Qt
 # (e.g. D:/Qt/Tools/mingw1310_64) to avoid GCC runtime version mismatches.
-option(SHIJIMA_WITH_LIBSHIMEJIFINDER "Build with bundled libshimejifinder" ON)
-
-if(SHIJIMA_WITH_LIBSHIMEJIFINDER)
-  set(LIBSHIMEJIFINDER_SOURCE_DIR ${CMAKE_SOURCE_DIR}/libshimejifinder)
-  set(LIBSHIMEJIFINDER_BIN_DIR ${CMAKE_CURRENT_BINARY_DIR}/libshimejifinder)
-  set(BIN2CPP_CMAKE_SCRIPT ${CMAKE_SOURCE_DIR}/cmake/bin2cpp.cmake)
-  set(SHIMEJIFINDER_USE_LIBARCHIVE OFF)
-  set(SHIMEJIFINDER_USE_LIBUNARR ON)
-  add_subdirectory(${CMAKE_SOURCE_DIR}/cmake/libshimejifinder)
-endif()
+set(LIBSHIMEJIFINDER_SOURCE_DIR ${CMAKE_SOURCE_DIR}/libshimejifinder)
+set(LIBSHIMEJIFINDER_BIN_DIR ${CMAKE_CURRENT_BINARY_DIR}/libshimejifinder)
+set(BIN2CPP_CMAKE_SCRIPT ${CMAKE_SOURCE_DIR}/cmake/bin2cpp.cmake)
+set(SHIMEJIFINDER_USE_LIBARCHIVE OFF)
+set(SHIMEJIFINDER_USE_LIBUNARR ON)
+add_subdirectory(${CMAKE_SOURCE_DIR}/cmake/libshimejifinder)
 
 option(SHIJIMA_WITH_DEFAULT_MASCOT "Embed DefaultMascot assets" ON)
 option(SHIJIMA_WITH_LICENSES_TEXT "Embed licenses text" ON)
 
 set(_shijima_generated_dir "${CMAKE_CURRENT_BINARY_DIR}")
 set(_shijima_licenses_header "${_shijima_generated_dir}/licenses_generated.hpp")
-
-option(SHIJIMA_WITH_SHIMEJIFINDER "Enable archive import support" ON)
 
 add_executable(NeurolingsCE)
 
@@ -171,7 +165,6 @@ target_sources(NeurolingsCE PRIVATE
   src/app/ui/menus/ContextMenuActions.cc
   src/app/core/audio/SoundEffectManager.cc
   src/app/core/http/ShijimaHttpApi.cc
-  src/app/core/import/SimpleZipImporter.cc
   src/app/runtime/ManagerEnvironmentSync.cc
   src/app/runtime/ManagerImportWorkflow.cc
   src/app/runtime/ManagerLifecycle.cc
@@ -310,7 +303,6 @@ target_include_directories(NeurolingsCE PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/libshijima
   ${CMAKE_CURRENT_SOURCE_DIR}/libshimejifinder
   ${CMAKE_CURRENT_SOURCE_DIR}/cpp-httplib
-  ${CMAKE_CURRENT_SOURCE_DIR}/miniz
 )
 
 target_compile_definitions(NeurolingsCE PRIVATE
@@ -319,8 +311,6 @@ target_compile_definitions(NeurolingsCE PRIVATE
   APP_DISPLAY_NAME="NeurolingsCE"
   $<$<BOOL:${SHIJIMA_USE_QTMULTIMEDIA}>:SHIJIMA_USE_QTMULTIMEDIA=1>
   $<$<NOT:$<BOOL:${SHIJIMA_USE_QTMULTIMEDIA}>>:SHIJIMA_USE_QTMULTIMEDIA=0>
-  $<$<BOOL:${SHIJIMA_WITH_SHIMEJIFINDER}>:SHIJIMA_WITH_SHIMEJIFINDER=1>
-  $<$<NOT:$<BOOL:${SHIJIMA_WITH_SHIMEJIFINDER}>>:SHIJIMA_WITH_SHIMEJIFINDER=0>
 )
 target_link_libraries(NeurolingsCE PRIVATE
   Qt6::Core
@@ -360,20 +350,7 @@ endif()
 target_link_libraries(NeurolingsCE PRIVATE ElaWidgetTools)
 target_compile_definitions(NeurolingsCE PRIVATE ELAWIDGETTOOLS_LIBRARY=0)
 
-# miniz (lightweight ZIP library for SimpleZipImporter, always built)
-target_sources(NeurolingsCE PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/miniz/miniz.c)
-set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/miniz/miniz.c PROPERTIES LANGUAGE C)
-
-if(SHIJIMA_WITH_SHIMEJIFINDER)
-  if(SHIJIMA_WITH_LIBSHIMEJIFINDER)
-    target_link_libraries(NeurolingsCE PRIVATE shimejifinder)
-    message(STATUS "Building with bundled libshimejifinder (archive import support enabled).")
-  else()
-    message(FATAL_ERROR "SHIJIMA_WITH_SHIMEJIFINDER=ON requires SHIJIMA_WITH_LIBSHIMEJIFINDER=ON for now.")
-  endif()
-else()
-  message(STATUS "Archive import support disabled (SHIJIMA_WITH_SHIMEJIFINDER=OFF).")
-endif()
+target_link_libraries(NeurolingsCE PRIVATE shimejifinder)
 
 if(SHIJIMA_USE_QTMULTIMEDIA)
   target_link_libraries(NeurolingsCE PRIVATE Qt6::Multimedia)

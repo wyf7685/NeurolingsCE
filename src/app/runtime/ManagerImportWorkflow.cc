@@ -29,22 +29,14 @@
 #include <QUrl>
 #include <QtConcurrent>
 #include "shijima-qt/ui/dialogs/common/ForcedProgressDialog.hpp"
-#if SHIJIMA_WITH_SHIMEJIFINDER
 #include <shimejifinder/analyze.hpp>
-#endif
-#if !SHIJIMA_WITH_SHIMEJIFINDER
-#include "shijima-qt/SimpleZipImporter.hpp"
-#endif
+
 
 std::set<std::string> ShijimaManager::import(QString const& path) noexcept {
     try {
-#if !SHIJIMA_WITH_SHIMEJIFINDER
-        return SimpleZipImporter::import(path, m_runtime->mascotsPath);
-#else
         auto ar = shimejifinder::analyze(path.toStdString());
         ar->extract(m_runtime->mascotsPath.toStdString());
         return ar->shimejis();
-#endif
     }
     catch (std::exception &ex) {
         std::cerr << "import failed: " << ex.what() << std::endl;
