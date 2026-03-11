@@ -8,7 +8,8 @@ SOURCES = src/app/main.cc \
 	src/app/core/assets/Asset.cc \
 	src/app/core/assets/MascotData.cc \
 	src/app/core/assets/AssetLoader.cc \
-	src/app/ShijimaContextMenu.cc \
+	src/app/ui/menus/ShijimaContextMenu.cc \
+	src/app/ui/menus/ShijimaContextMenuActions.cc \
 	src/app/ShijimaManager.cc \
 	src/app/core/audio/SoundEffectManager.cc \
 	src/app/core/http/ShijimaHttpApi.cc \

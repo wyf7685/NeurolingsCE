@@ -20,7 +20,7 @@
 
 #include <QDir>
 
-#include "shijima-qt/ShijimaContextMenu.hpp"
+#include "shijima-qt/ui/menus/ShijimaContextMenu.hpp"
 #include "shijima-qt/ui/widgets/SpeechBubbleWidget.hpp"
 #include "shijima-qt/ui/dialogs/inspector/ShimejiInspectorDialog.hpp"
 

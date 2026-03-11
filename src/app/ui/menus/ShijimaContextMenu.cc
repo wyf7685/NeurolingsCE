@@ -1,5 +1,3 @@
-#pragma once
-
 // 
 // Shijima-Qt - Cross-platform shimeji simulation app for desktop
 // Copyright (C) 2025 pixelomer
@@ -19,3 +17,26 @@
 // 
 
 #include "shijima-qt/ui/menus/ShijimaContextMenu.hpp"
+
+ShijimaContextMenu::ShijimaContextMenu(ShijimaWidget *parent)
+    : QMenu("Context menu", parent)
+{
+    populateMenu();
+}
+
+void ShijimaContextMenu::populateMenu() {
+    addBehaviorActions();
+    addSeparator();
+    addControlActions();
+    addSeparator();
+    addManagementActions();
+    addSeparator();
+    addDismissActions();
+}
+
+void ShijimaContextMenu::closeEvent(QCloseEvent *event) {
+    shijimaParent()->contextMenuClosed(event);
+    QMenu::closeEvent(event);
+}
+
+#include "ShijimaContextMenu.moc"
