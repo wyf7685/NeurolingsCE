@@ -218,7 +218,7 @@ QWidget *ShijimaManager::mascotParent() {
     if (windowedMode()) {
         return m_ui->sandboxWidget;
     }
-    return this;
+    return nullptr;
 }
 
 QScreen *ShijimaManager::mascotScreen() {
