@@ -38,7 +38,7 @@ Neurolings Core is the release version of this project, while Neurolings is the 
 - Qt 6.8+ (Core, Gui, Widgets, Concurrent, LinguistTools)
 - CMake 3.21+ (Windows/MSVC) or Make (Linux/macOS)
 
-Initialize submodules first:
+Initialize the remaining external submodules first (`libshimejifinder`, `cpp-httplib`, and `ElaWidgetTools`):
 
 ```bash
 git submodule update --init --recursive
@@ -112,7 +112,7 @@ NeurolingsCE/
 ├── src/app/              # Qt application layer (split into core/runtime/ui)
 ├── src/platform/Platform/ # Platform abstraction (Windows/Linux/macOS)
 ├── include/shijima-qt/   # Public headers
-├── libshijima/           # [submodule] Core mascot simulation engine
+├── libshijima/           # Vendored core mascot simulation engine source
 ├── libshimejifinder/     # [submodule] Mascot pack import/extraction
 ├── cpp-httplib/          # [submodule] HTTP server (header-only)
 ├── translations/         # i18n translation files

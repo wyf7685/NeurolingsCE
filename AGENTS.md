@@ -15,7 +15,7 @@ NeurolingsCE/
 ├── src/app/              # Qt application layer (core/runtime/ui slices)
 ├── src/platform/Platform/ # OS abstraction: Windows/Linux/macOS
 ├── include/shijima-qt/   # Public headers + nested UI forwarding headers
-├── libshijima/           # [submodule] Core mascot simulation engine
+├── libshijima/           # Vendored core mascot simulation engine
 ├── libshimejifinder/     # [submodule] Archive import/extract for mascot packs
 ├── cpp-httplib/          # [submodule] HTTP server (header-only)
 ├── cmake/                # CMake helper scripts (BundleDefaultMascot, GenerateLicenses)
@@ -69,7 +69,7 @@ NeurolingsCE/
 - **32-bit MSVC**: Explicitly fatal-errored. Must use x64 toolchain.
 - **`SHIJIMA_WITH_DEFAULT_MASCOT=OFF`**: Not supported — `DefaultMascot.cc` is required.
 - **`SHIJIMA_WITH_LICENSES_TEXT=OFF`**: Not supported — `licenses_generated.hpp` is required.
-- **libshijima**: Does NOT accept contributions (stated in their README). Treat as read-only dependency.
+- **libshijima upstream**: Does NOT accept contributions directly (stated in their README). In this repo it is vendored, so local fixes live here.
 
 ## DUAL BUILD SYSTEMS
 
@@ -85,11 +85,11 @@ NeurolingsCE/
 
 | Module | Purpose | Notes |
 |--------|---------|-------|
-| `libshijima` | Mascot simulation core (XML parsing, behaviors, scripting via duktape) | Header-heavy, `shijima/` namespace |
+| `libshijima` | Mascot simulation core (XML parsing, behaviors, scripting via duktape) | Vendored in-tree, `shijima/` namespace |
 | `libshimejifinder` | Archive extraction for `.zip` mascot packs | Uses libunarr + optional libarchive |
 | `cpp-httplib` | Header-only HTTP client/server | Used for single-instance check + REST API |
 
-All three: `git submodule update --init --recursive`.
+Remaining external submodules: `git submodule update --init --recursive`.
 
 ## COMMANDS
 

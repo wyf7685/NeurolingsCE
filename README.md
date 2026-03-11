@@ -38,7 +38,7 @@ Neurolings Core是该项目的发行版，Neurolings是该项目的懒人包
 - Qt 6.8+（Core, Gui, Widgets, Concurrent, LinguistTools）
 - CMake 3.21+（Windows/MSVC）或 Make（Linux/macOS）
 
-子模块需要初始化：
+剩余外部子模块需要初始化（`libshimejifinder`、`cpp-httplib`、`ElaWidgetTools`）：
 
 ```bash
 git submodule update --init --recursive
@@ -112,7 +112,7 @@ NeurolingsCE/
 ├── src/app/              # Qt 应用层（core/runtime/ui 分层）
 ├── src/platform/Platform/ # 平台抽象层（Windows/Linux/macOS）
 ├── include/shijima-qt/   # 公共头文件
-├── libshijima/           # [子模块] 核心看板娘模拟引擎
+├── libshijima/           # 内置核心看板娘模拟引擎源码
 ├── libshimejifinder/     # [子模块] 看板娘资源包导入/解压
 ├── cpp-httplib/          # [子模块] HTTP 服务器（header-only）
 ├── translations/         # i18n 翻译文件
