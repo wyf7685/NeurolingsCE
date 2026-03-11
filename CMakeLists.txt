@@ -189,7 +189,8 @@ target_sources(NeurolingsCE PRIVATE
   src/app/ui/interface/ShijimaManagerInterface.cc
   src/app/ui/interface/ShijimaManagerSettingsPage.cc
   src/app/cli.cc
-  src/app/SpeechBubbleWidget.cc
+  src/app/ui/widgets/SpeechBubbleWidget.cc
+  src/app/ui/widgets/SpeechBubbleWidgetText.cc
   src/resources/resources.qrc
 
   # Headers with Q_OBJECT (needed for AUTOMOC)
@@ -198,7 +199,7 @@ target_sources(NeurolingsCE PRIVATE
   include/shijima-qt/ui/dialogs/licenses/ShijimaLicensesDialog.hpp
   include/shijima-qt/ui/dialogs/inspector/ShimejiInspectorDialog.hpp
 
-  include/shijima-qt/SpeechBubbleWidget.hpp
+  include/shijima-qt/ui/widgets/SpeechBubbleWidget.hpp
   src/platform/Platform/Platform.hpp
   src/platform/Platform/ActiveWindow.hpp
   src/platform/Platform/ActiveWindowObserver.hpp

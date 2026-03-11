@@ -18,36 +18,4 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // 
 
-#include <QWidget>
-#include <QString>
-#include <QTimer>
-#include <QStringList>
-#include <QMap>
-
-class SpeechBubbleWidget : public QWidget
-{
-    Q_OBJECT
-public:
-    explicit SpeechBubbleWidget(QWidget *parent = nullptr);
-    void showBubble(const QString &text, const QPoint &anchorScreenPos);
-    void hideBubble();
-    void updatePosition(const QPoint &anchorScreenPos);
-    bool isActive() const { return m_active; }
-
-    static QStringList loadBubbleTexts(const QString &mascotPath = QString());
-    static QString randomBubbleText(const QString &mascotPath = QString());
-
-protected:
-    void paintEvent(QPaintEvent *event) override;
-
-private:
-    QString m_text;
-    QTimer m_hideTimer;
-    QPoint m_anchorScreenPos;
-    bool m_active = false;
-    int m_tailHeight = 12;
-    int m_cornerRadius = 10;
-    int m_padding = 12;
-
-    static QMap<QString, QStringList> s_bubbleTextsCache;
-};
+#include "shijima-qt/ui/widgets/SpeechBubbleWidget.hpp"

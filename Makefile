@@ -31,7 +31,8 @@ SOURCES = src/app/main.cc \
 	src/app/ui/interface/ShijimaManagerInterface.cc \
 	src/app/ui/interface/ShijimaManagerSettingsPage.cc \
 	src/app/cli.cc \
-	src/app/SpeechBubbleWidget.cc \
+	src/app/ui/widgets/SpeechBubbleWidget.cc \
+	src/app/ui/widgets/SpeechBubbleWidgetText.cc \
 	miniz/miniz.c \
 	src/resources/resources.rc \
 	qrc_resources.cc \

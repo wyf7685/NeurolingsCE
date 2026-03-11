@@ -25,7 +25,7 @@
 #include <stdexcept>
 
 #include "shijima-qt/ShijimaManager.hpp"
-#include "shijima-qt/SpeechBubbleWidget.hpp"
+#include "shijima-qt/ui/widgets/SpeechBubbleWidget.hpp"
 
 void ShijimaWidget::setDragTarget(ShijimaWidget *target) {
     if (m_dragTarget != nullptr) {

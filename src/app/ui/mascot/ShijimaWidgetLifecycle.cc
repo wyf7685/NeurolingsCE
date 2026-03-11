@@ -21,7 +21,7 @@
 #include <QDir>
 
 #include "shijima-qt/ShijimaContextMenu.hpp"
-#include "shijima-qt/SpeechBubbleWidget.hpp"
+#include "shijima-qt/ui/widgets/SpeechBubbleWidget.hpp"
 #include "shijima-qt/ui/dialogs/inspector/ShimejiInspectorDialog.hpp"
 
 ShijimaWidget::ShijimaWidget(MascotData *mascotData,
