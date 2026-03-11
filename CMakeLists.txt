@@ -164,17 +164,18 @@ endif()
 
 target_sources(NeurolingsCE PRIVATE
   src/app/main.cc
-  src/app/Asset.cc
-  src/app/MascotData.cc
-  src/app/AssetLoader.cc
+  src/app/core/assets/Asset.cc
+  src/app/core/assets/MascotData.cc
+  src/app/core/assets/AssetLoader.cc
   src/app/ShijimaContextMenu.cc
   src/app/ShijimaManager.cc
+  src/app/core/audio/SoundEffectManager.cc
+  src/app/core/http/ShijimaHttpApi.cc
+  src/app/core/import/SimpleZipImporter.cc
   src/app/runtime/ShijimaManagerEnvironment.cc
   src/app/runtime/ShijimaManagerImport.cc
   src/app/runtime/ShijimaManagerMascots.cc
   src/app/ShijimaWidget.cc
-  src/app/SoundEffectManager.cc
-  src/app/ShijimaHttpApi.cc
   src/app/ui/ShijimaManagerActions.cc
   src/app/ui/dialogs/common/ForcedProgressDialog.cc
   src/app/ui/dialogs/inspector/ShimejiInspectorDialog.cc
@@ -186,7 +187,6 @@ target_sources(NeurolingsCE PRIVATE
   src/app/ui/interface/ShijimaManagerInterface.cc
   src/app/ui/interface/ShijimaManagerSettingsPage.cc
   src/app/cli.cc
-  src/app/SimpleZipImporter.cc
   src/app/SpeechBubbleWidget.cc
   src/resources/resources.qrc
 

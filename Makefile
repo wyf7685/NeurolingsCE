@@ -5,18 +5,19 @@ SHIJIMA_USE_QTMULTIMEDIA ?= 1
 PREFIX ?= /usr/local
 
 SOURCES = src/app/main.cc \
-	src/app/Asset.cc \
-	src/app/MascotData.cc \
-	src/app/AssetLoader.cc \
+	src/app/core/assets/Asset.cc \
+	src/app/core/assets/MascotData.cc \
+	src/app/core/assets/AssetLoader.cc \
 	src/app/ShijimaContextMenu.cc \
 	src/app/ShijimaManager.cc \
+	src/app/core/audio/SoundEffectManager.cc \
+	src/app/core/http/ShijimaHttpApi.cc \
+	src/app/core/import/SimpleZipImporter.cc \
 	src/app/runtime/ShijimaManagerEnvironment.cc \
 	src/app/runtime/ShijimaManagerImport.cc \
 	src/app/runtime/ShijimaManagerMascots.cc \
 	src/app/ShijimaWidget.cc \
-	src/app/SoundEffectManager.cc \
 	DefaultMascot.cc \
-	src/app/ShijimaHttpApi.cc \
 	src/app/ui/dialogs/common/ForcedProgressDialog.cc \
 	src/app/ui/dialogs/inspector/ShimejiInspectorDialog.cc \
 	src/app/ui/dialogs/inspector/ShimejiInspectorDialogRows.cc \
@@ -29,7 +30,6 @@ SOURCES = src/app/main.cc \
 	src/app/ui/interface/ShijimaManagerSettingsPage.cc \
 	src/app/cli.cc \
 	src/app/SpeechBubbleWidget.cc \
-	src/app/SimpleZipImporter.cc \
 	miniz/miniz.c \
 	src/resources/resources.rc \
 	qrc_resources.cc \
