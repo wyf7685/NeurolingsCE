@@ -20,8 +20,6 @@
 
 #include <functional>
 
-#include "../ManagerState.hpp"
-
 namespace ShijimaManagerRuntimeInternal {
 
 constexpr int kSubtickCount = 4;

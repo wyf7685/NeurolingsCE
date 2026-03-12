@@ -19,6 +19,8 @@
 #include "shijima-qt/ShijimaManager.hpp"
 #include "shijima-qt/AppLog.hpp"
 #include "shijima-qt/MascotData.hpp"
+#include "../runtime/ManagerRuntimeState.hpp"
+#include "ManagerUiState.hpp"
 #include "../runtime/ManagerRuntimeHelpers.hpp"
 #include "ManagerUiHelpers.hpp"
 #include <array>

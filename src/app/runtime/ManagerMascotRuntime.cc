@@ -20,6 +20,8 @@
 #include "shijima-qt/AppLog.hpp"
 #include "shijima-qt/MascotData.hpp"
 #include "shijima-qt/ui/mascot/ShijimaWidget.hpp"
+#include "ManagerRuntimeState.hpp"
+#include "../ui/ManagerUiState.hpp"
 #include "../ui/ManagerUiHelpers.hpp"
 #include <filesystem>
 #include <optional>

@@ -20,8 +20,6 @@
 
 #include <QString>
 
-#include "../ManagerState.hpp"
-
 class QColor;
 class QListWidget;
 class ShijimaManager;

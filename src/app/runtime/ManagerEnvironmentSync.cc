@@ -19,6 +19,8 @@
 #include "shijima-qt/ShijimaManager.hpp"
 #include "shijima-qt/AppLog.hpp"
 #include "shijima-qt/ui/mascot/ShijimaWidget.hpp"
+#include "ManagerRuntimeState.hpp"
+#include "../ui/ManagerUiState.hpp"
 #include "ManagerRuntimeHelpers.hpp"
 #include <cmath>
 #include <QCursor>

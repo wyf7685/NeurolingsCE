@@ -18,6 +18,8 @@
 
 #include "shijima-qt/ShijimaManager.hpp"
 
+#include "ManagerRuntimeState.hpp"
+#include "../ui/ManagerUiState.hpp"
 #include "ManagerRuntimeHelpers.hpp"
 #include "../ui/ManagerUiHelpers.hpp"
 #include "shijima-qt/ui/mascot/ShijimaWidget.hpp"

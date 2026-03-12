@@ -18,6 +18,7 @@
 
 #include "shijima-qt/ShijimaManager.hpp"
 #include "shijima-qt/AppLog.hpp"
+#include "ManagerRuntimeState.hpp"
 #include "../ui/ManagerUiHelpers.hpp"
 #include "ManagerRuntimeHelpers.hpp"
 #include <exception>
