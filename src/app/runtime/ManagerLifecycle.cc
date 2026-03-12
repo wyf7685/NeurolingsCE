@@ -19,8 +19,11 @@
 #include "shijima-qt/ShijimaManager.hpp"
 
 #include "ManagerRuntimeHelpers.hpp"
+#include "../ui/ManagerUiHelpers.hpp"
+#include "shijima-qt/ui/mascot/ShijimaWidget.hpp"
 
 #include <QCloseEvent>
+#include <QCoreApplication>
 #include <QGuiApplication>
 
 static ShijimaManager *m_defaultManager = nullptr;
@@ -62,6 +65,40 @@ void ShijimaManager::abortPendingCallbacks() {
     m_runtime->tickCallbackCompletion.notify_all();
 }
 
+void ShijimaManager::shutdownForQuit() {
+    abortPendingCallbacks();
+    ShijimaManagerUiInternal::teardownTrayIcon();
+
+    if (m_runtime->mascotTimer > 0) {
+        killTimer(m_runtime->mascotTimer);
+        m_runtime->mascotTimer = 0;
+    }
+    if (m_runtime->windowObserverTimer > 0) {
+        killTimer(m_runtime->windowObserverTimer);
+        m_runtime->windowObserverTimer = 0;
+    }
+
+    m_httpApi.stop();
+
+    for (auto mascot : m_runtime->mascots) {
+        if (mascot == nullptr) {
+            continue;
+        }
+        mascot->markForDeletion();
+        mascot->hide();
+        mascot->close();
+        delete mascot;
+    }
+    m_runtime->mascots.clear();
+    m_runtime->mascotsById.clear();
+
+    if (m_ui->sandboxWidget != nullptr) {
+        m_ui->sandboxWidget->close();
+        delete m_ui->sandboxWidget;
+        m_ui->sandboxWidget = nullptr;
+    }
+}
+
 void ShijimaManager::onTickSync(std::function<void(ShijimaManager *)> callback) {
     if (m_runtime->shuttingDown.load()) {
         return;
@@ -96,17 +133,11 @@ void ShijimaManager::closeEvent(QCloseEvent *event) {
         return;
     }
 
-    abortPendingCallbacks();
-    m_httpApi.stop();
-    if (m_runtime->mascotTimer != 0) {
-        killTimer(m_runtime->mascotTimer);
-        m_runtime->mascotTimer = 0;
-    }
-    if (m_runtime->windowObserverTimer != 0) {
-        killTimer(m_runtime->windowObserverTimer);
-        m_runtime->windowObserverTimer = 0;
-    }
+    shutdownForQuit();
     event->accept();
+    QMetaObject::invokeMethod(qApp, []() {
+        QCoreApplication::quit();
+    }, Qt::QueuedConnection);
 #else
     event->ignore();
     setManagerVisible(false);

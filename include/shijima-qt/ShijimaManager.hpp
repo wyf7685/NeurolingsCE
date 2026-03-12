@@ -90,6 +90,7 @@ private:
     explicit ShijimaManager(QWidget *parent = nullptr);
     std::unique_lock<std::mutex> acquireLock();
     void abortPendingCallbacks();
+    void shutdownForQuit();
     void loadDefaultMascot();
     void loadData(MascotData *data);
     void spawnClicked();

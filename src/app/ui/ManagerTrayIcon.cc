@@ -144,4 +144,18 @@ void setupTrayIcon(ShijimaManager *manager) {
     g_trayIcon->show();
 }
 
+void teardownTrayIcon() {
+    if (g_trayIcon != nullptr) {
+        g_trayIcon->hide();
+        g_trayIcon->setContextMenu(nullptr);
+        g_trayIcon->deleteLater();
+        g_trayIcon = nullptr;
+    }
+    if (g_trayMenu != nullptr) {
+        g_trayMenu->hide();
+        g_trayMenu->deleteLater();
+        g_trayMenu = nullptr;
+    }
+}
+
 }
