@@ -22,9 +22,11 @@
 #include <QApplication>
 #include <QDesktopServices>
 #include <QDialog>
+#include <QFontMetrics>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPushButton>
+#include <QSizePolicy>
 #include <QUrl>
 #include <QVBoxLayout>
 #include "shijima-qt/ui/dialogs/licenses/ShijimaLicensesDialog.hpp"
@@ -33,6 +35,14 @@
 #ifndef NEUROLINGSCE_VERSION
 #define NEUROLINGSCE_VERSION "0.1.0"
 #endif
+
+static void configureDialogButton(QPushButton *button)
+{
+    const QFontMetrics metrics(button->font());
+    const int horizontalPadding = 52;
+    button->setMinimumWidth(metrics.horizontalAdvance(button->text()) + horizontalPadding);
+    button->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+}
 
 void ShijimaManager::setupAboutPage() {
     addFooterNode(tr("About"), m_ui->aboutKey, 0, ElaIconType::User);
@@ -133,6 +143,7 @@ void ShijimaManager::setupAboutPage() {
 
             QPushButton *licensesButton = new QPushButton(tr("View Licenses"));
             licensesButton->setStyleSheet(buttonStyle);
+            configureDialogButton(licensesButton);
             connect(licensesButton, &QPushButton::clicked, [this]() {
                 ShijimaLicensesDialog dialog { this };
                 dialog.exec();
@@ -143,12 +154,14 @@ void ShijimaManager::setupAboutPage() {
             linksRow->addStretch();
             auto *btnWeb = new QPushButton(tr("Shijima Website"));
             btnWeb->setStyleSheet(buttonStyle);
+            configureDialogButton(btnWeb);
             connect(btnWeb, &QPushButton::clicked, []() {
                 QDesktopServices::openUrl(QUrl { "https://getshijima.app" });
             });
             linksRow->addWidget(btnWeb);
             auto *btnBug = new QPushButton(tr("Report Issue"));
             btnBug->setStyleSheet(buttonStyle);
+            configureDialogButton(btnBug);
             connect(btnBug, &QPushButton::clicked, []() {
                 QDesktopServices::openUrl(QUrl { "https://github.com/qingchenyouforcc/NeurolingsCE/issues" });
             });
@@ -160,7 +173,7 @@ void ShijimaManager::setupAboutPage() {
             buttonRow->addStretch();
             QPushButton *closeButton = new QPushButton(tr("Close"));
             closeButton->setStyleSheet(buttonStyle);
-            closeButton->setMinimumWidth(100);
+            configureDialogButton(closeButton);
             connect(closeButton, &QPushButton::clicked, aboutDialog, &QDialog::accept);
             buttonRow->addWidget(closeButton);
             buttonRow->addStretch();

@@ -21,11 +21,21 @@
 #include "../ManagerUiState.hpp"
 #include "../ManagerUiHelpers.hpp"
 #include <QDesktopServices>
+#include <QFontMetrics>
 #include <QHBoxLayout>
 #include <QListWidget>
+#include <QSizePolicy>
 #include <QUrl>
 #include <QVBoxLayout>
 #include "ElaPushButton.h"
+
+static void configureActionButton(ElaPushButton *button)
+{
+    const QFontMetrics metrics(button->font());
+    const int horizontalPadding = 44;
+    button->setMinimumWidth(metrics.horizontalAdvance(button->text()) + horizontalPadding);
+    button->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+}
 
 void ShijimaManager::setupHomePage() {
     m_ui->homePage = new QWidget(this);
@@ -37,18 +47,22 @@ void ShijimaManager::setupHomePage() {
     actionRow->setSpacing(8);
 
     auto *btnSpawn = new ElaPushButton(tr("Spawn Random"));
+    configureActionButton(btnSpawn);
     connect(btnSpawn, &ElaPushButton::clicked, this, &ShijimaManager::spawnClicked);
     actionRow->addWidget(btnSpawn);
 
     auto *btnImport = new ElaPushButton(tr("Import"));
+    configureActionButton(btnImport);
     connect(btnImport, &ElaPushButton::clicked, this, &ShijimaManager::importAction);
     actionRow->addWidget(btnImport);
 
     auto *btnDelete = new ElaPushButton(tr("Delete"));
+    configureActionButton(btnDelete);
     connect(btnDelete, &ElaPushButton::clicked, this, &ShijimaManager::deleteAction);
     actionRow->addWidget(btnDelete);
 
     auto *btnFolder = new ElaPushButton(tr("Show Folder"));
+    configureActionButton(btnFolder);
     connect(btnFolder, &ElaPushButton::clicked, [this]() {
         QDesktopServices::openUrl(QUrl::fromLocalFile(m_runtime->mascotsPath));
     });
